@@ -1,2 +1,2 @@
-# exception-insights
-Exceptions analysis and optimization tools
+# SAFE: Static Analyzer For Exceptions
+Exceptions binary analysis tool (for Itanum ARM ABI)

@@ -1,0 +1,31 @@
+CompileFlags:
+  Add: 
+    - "-std=c++23"
+    - "-Wall"
+    - "-Wextra"
+    - "-Wpedantic"
+  
+Index:
+  StandardLibrary: Yes
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add: 
+      - modernize*
+      - performance*
+      - bugprone*
+      - portability*
+    Remove:
+      - modernize-use-trailing-return-type
+  
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  
+Hover:
+  ShowAKA: Yes
+
+Completion:
+  AllScopes: Yes
