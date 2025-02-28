@@ -33,7 +33,7 @@ class safe_conan(ConanFile):
         c = CMake(self)
         c.configure()
         c.build(target="copy_compile_commands")
-        
+
     """
     Manage requirements to build our project, this includes all build tools.
     """
@@ -50,7 +50,6 @@ class safe_conan(ConanFile):
     Method to build the project
     """
     def build(self):
-        print(f"Compiler: {self.settings.compiler}")
         cmake = CMake(self)
         cmake.configure()
         cmake.build()

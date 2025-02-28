@@ -16,16 +16,26 @@ add_executable(${PROJECT_NAME} src/main.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
 
 # Add compile options
-target_compile_options(${PROJECT_NAME} PRIVATE
-  -g
-  -Werror
-  -Wall
-  -Wextra
-  -Wshadow
-  -ffunction-sections
-  -fdata-sections
-  $<$<COMPILE_LANGUAGE:CXX>:-fexceptions -frtti>
-)
+list(APPEND COMPILER_BUILD_FLAGS   
+-Werror
+-Wall
+-Wextra
+-Wshadow
+-ffunction-sections
+-fdata-sections
+$<$<COMPILE_LANGUAGE:CXX>:-fexceptions -frtti>)
+
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+message("Building Debug")
+list(APPEND COMPILER_BUILD_FLAGS -g -Og)
+
+else()
+message("Building release")
+list(APPEND COMPILER_BUILD_FLAGS -O2)
+
+endif()
+
+target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
 # Link against ZLIB
 # target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
