@@ -1,0 +1,74 @@
+\doxysection{conanfile.\+safe\+\_\+conan Class Reference}
+\hypertarget{classconanfile_1_1safe__conan}{}\label{classconanfile_1_1safe__conan}\index{conanfile.safe\_conan@{conanfile.safe\_conan}}
+
+
+Inheritance diagram for conanfile.\+safe\+\_\+conan\+:
+% FIG 0
+
+
+Collaboration diagram for conanfile.\+safe\+\_\+conan\+:
+% FIG 1
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a5d5c6d11b084111b6719c8382b46860a}\label{classconanfile_1_1safe__conan_a5d5c6d11b084111b6719c8382b46860a} 
+{\bfseries requirements} (self)
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a8fa9248ffda537edc4598701f90003b7}\label{classconanfile_1_1safe__conan_a8fa9248ffda537edc4598701f90003b7} 
+{\bfseries generate} (self)
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a9e9046e6e1876a111b529ff16cb68d2d}\label{classconanfile_1_1safe__conan_a9e9046e6e1876a111b529ff16cb68d2d} 
+{\bfseries build\+\_\+requirements} (self)
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a12a4b37d0b07fe6ae75bccffc4c8c121}\label{classconanfile_1_1safe__conan_a12a4b37d0b07fe6ae75bccffc4c8c121} 
+{\bfseries layout} (self)
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_aa49b60a29d23b5d9e0acb0705fcd0a69}\label{classconanfile_1_1safe__conan_aa49b60a29d23b5d9e0acb0705fcd0a69} 
+{\bfseries build} (self)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_ab7155c24fdf54e459fb06ddab45d051d}\label{classconanfile_1_1safe__conan_ab7155c24fdf54e459fb06ddab45d051d} 
+str {\bfseries name} = "{}safe"{}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a5956110e38de361e7c8fab72de8bb2c2}\label{classconanfile_1_1safe__conan_a5956110e38de361e7c8fab72de8bb2c2} 
+str {\bfseries license} = "{}Apache-\/2.\+0"{}
+\item 
+tuple \mbox{\hyperlink{classconanfile_1_1safe__conan_a687f5ca9fa448b796c2fc2b09c8eddbf}{description}}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a9b358e9322a30bcfd184461b354ca226}\label{classconanfile_1_1safe__conan_a9b358e9322a30bcfd184461b354ca226} 
+tuple {\bfseries topics} = ("{}toolchain"{}, "{}developer-\/experience"{})
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a98daffa01d2cb2975b0009196922e05d}\label{classconanfile_1_1safe__conan_a98daffa01d2cb2975b0009196922e05d} 
+str {\bfseries settings} = "{}compiler"{}, "{}build\+\_\+type"{}, "{}os"{}, "{}arch"{}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_acfee7701aec18e7e4d1281a9c5de3375}\label{classconanfile_1_1safe__conan_acfee7701aec18e7e4d1281a9c5de3375} 
+str {\bfseries generators} = "{}CMake\+Toolchain"{}, "{}CMake\+Deps"{}, "{}Virtual\+Build\+Env"{}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classconanfile_1_1safe__conan_a43f8ed2c5a787d869071a8c25cb42f99}\label{classconanfile_1_1safe__conan_a43f8ed2c5a787d869071a8c25cb42f99} 
+str {\bfseries \+\_\+min\+\_\+cppstd} (self)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\Hypertarget{classconanfile_1_1safe__conan_a687f5ca9fa448b796c2fc2b09c8eddbf}\label{classconanfile_1_1safe__conan_a687f5ca9fa448b796c2fc2b09c8eddbf} 
+\index{conanfile.safe\_conan@{conanfile.safe\_conan}!description@{description}}
+\index{description@{description}!conanfile.safe\_conan@{conanfile.safe\_conan}}
+\doxysubsubsection{\texorpdfstring{description}{description}}
+{\footnotesize\ttfamily tuple conanfile.\+safe\+\_\+conan.\+description\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=\ \ (\textcolor{stringliteral}{"{}A\ collection\ of\ interfaces\ and\ abstractions\ for\ embedded\ "{}}}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{stringliteral}{"{}peripherals\ and\ devices\ using\ modern\ C++"{}})}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/mchan/\+Senior\+\_\+\+Project/exception-\/insights/conanfile.\+py\end{DoxyCompactItemize}
