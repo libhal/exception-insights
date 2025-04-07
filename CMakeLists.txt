@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.27)
 project(safe LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
+
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_custom_target(copy_compile_commands ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -8,9 +13,16 @@ add_custom_target(copy_compile_commands ALL
     ${CMAKE_SOURCE_DIR}/compile_commands.json
     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
+# Find package dependancies
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") #TODO: Remove due to this being a temporary patch for libraries to work
+find_package(libelf REQUIRED)
 
 # Create the executable target
 add_executable(${PROJECT_NAME} src/main.cpp)
+
+#Linking Libraries
+target_link_libraries(${PROJECT_NAME} libelf::libelf)
+
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
