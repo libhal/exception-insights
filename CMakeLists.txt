@@ -11,15 +11,17 @@ find_package(ctre REQUIRED)
 find_package(libelf REQUIRED)
 
 # Find package dependancies
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") #TODO: Remove due to this being a temporary patch for libraries to work
+find_package(libelf REQUIRED)
+
+# Create the executable target
+add_executable(${PROJECT_NAME} src/main.cpp)
 
 #Linking Libraries
 add_executable(${PROJECT_NAME} src/main.cpp 
                                src/elf_parser.cpp 
                                src/gcc_parse.cpp)
 
-#Linking Libraries
-target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
