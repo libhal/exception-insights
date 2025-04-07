@@ -183,3 +183,4 @@ build/
 out/
 src/main
 src/lsda.bin
+binary/lsda_objcopy_onlysection
