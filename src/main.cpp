@@ -1,38 +1,22 @@
-/**
- * @file main.cpp
- * @author SAFE Group
- * @brief main file of SAFE
- * @version 0.1
- * @date 2025-07-17
- *
- * @copyright Copyright (c) 2025
- *
- */
-#include "gcc_parse.hpp"
-#include <print>
-#include <stdexcept>
-
-namespace rng = std::ranges;
-namespace views = rng::views;
-
-using string = std::string;
-using std::operator""sv;
-
+#include "abiparse.hpp"
 #include <fstream>
-#include <print>
-#include <string_view>
+#include <vector>
+#include <iostream>
 
-#include "../include/elf_parser.hpp"
-int main(int argc, char* argv[])
+int main() 
 {
-    std::println("yeet: {}", __cplusplus);
-    try {
-        parse("./"
-              "demo_class.wpa.081i.whole-program");
-    } catch (std::runtime_error& e) {
-        std::println("Error: {}", e.what());
+    std::ifstream file("lsda.bin", std::ios::binary);
+    if (!file) {
+        std::cerr << "cant open lsda.bin\n";
         return 1;
     }
+
+    std::vector<uint8_t> lsda_data((std::istreambuf_iterator<char>(file)), {});
+    Abi_parser parser(lsda_data);
+
+    parser.parse();
+    parser.print_call_sites();
+    parser.print_actions();
 
     return 0;
 }
