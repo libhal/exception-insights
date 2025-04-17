@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <print>
 #include <bitset>
+#include <string>
 
 using namespace std;
 
@@ -19,18 +20,17 @@ class Elf_parser
         void printEhdr();
         void printPhdr();
         void printShdr();
-        void getlsda(char *section);
-        //printElf
+        void getlsda(string section);
+        void closeElf();
+
     private:
         int elfClass = 0;
-        int fd;
+        int fd, fbin;
         size_t n, shstrndx;
-        // sz;
 
         char **file;
 
         char * name;
-        // *p , pc [4* sizeof ( char )];
         Elf_Scn * scn ;
         Elf_Data * data ;
 
@@ -157,7 +157,7 @@ void Elf_parser::printShdr()
     }	
 }
 
-void Elf_parser::getlsda(char *section)
+void Elf_parser::getlsda(string section)
 {
     if (elf_getshdrstrndx (e , &shstrndx ) != 0) 
     {
@@ -178,18 +178,30 @@ void Elf_parser::getlsda(char *section)
             errx(EX_SOFTWARE, "elf_strptr() failed: %s.", elf_errmsg(-1));
         }
 
-        if(name == section)
+        if(static_cast<string>(name) == section)
         {
+            println("LSDA found");
+            println("Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(scn)), name);	
+            println("====================");
+
+            if(fbin = open("../binary/lsda", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR) < 0)
+            {
+                err (EX_NOINPUT , "open ../binary/lsda failed " );
+            }
+            
+            while((data = elf_getdata(scn, data)) != NULL)
+            {
+                write(fbin, data->d_buf, data->d_size);
+            }
+
+            close(fbin);
             break;
         }
     }
-    
-    println("Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(scn)), name );	
-    println("====================");
-    data = null;
-    n = 0;
-    while (n < shdr.sh_size && (data = ef_getdata(scn, data)) != NULL)
-    {
-        //TODO (Michael): map the data bytes to LSDA format (See Khalil's slides at 143)
-    }
+}
+
+void Elf_parser::closeElf()
+{
+    close(fd);
+    println("ELF file closed");
 }
