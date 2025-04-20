@@ -1,11 +1,13 @@
-#include "abiparse.hpp"
+#include "../include/abiparse.hpp"
 #include <fstream>
 #include <vector>
 #include <iostream>
 
+// keep in mind of pathing!!!
+
 int main() 
 {
-    std::ifstream file("lsda.bin", std::ios::binary);
+    std::ifstream file("LSDA/lsda.bin", std::ios::binary);
     if (!file) {
         std::cerr << "cant open lsda.bin\n";
         return 1;
