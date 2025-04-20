@@ -13,11 +13,18 @@ add_custom_target(copy_compile_commands ALL
     ${CMAKE_SOURCE_DIR}/compile_commands.json
     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
+# Find package dependancies
+# list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") #TODO: Remove due to this being a temporary patch for libraries to work
+# find_package(libelf REQUIRED)
 
 # Create the executable target
 add_executable(${PROJECT_NAME} 
 src/main.cpp
-src/abiparse.cpp )
+src/abiparse.cpp)
+
+#Linking Libraries
+#target_link_libraries(${PROJECT_NAME} libelf::libelf)
+
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
