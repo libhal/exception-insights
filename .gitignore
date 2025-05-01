@@ -181,3 +181,5 @@ build/
 .latex/
 
 out/
+src/main
+src/lsda.bin
