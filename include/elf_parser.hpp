@@ -1,207 +1,198 @@
 #pragma once
+#include <bitset>
 #include <err.h>
 #include <fcntl.h>
-#include <libelf.h> 
 #include <gelf.h>
+#include <libelf.h>
+#include <print>
 #include <stdlib.h>
+#include <string>
 #include <sysexits.h>
 #include <unistd.h>
-#include <print>
-#include <bitset>
-#include <string>
 
-using namespace std;
-
-class Elf_parser
+class ElfPparser
 {
-    public: 
-        Elf_parser(char **file_p) : file(file_p) {};
-        void openElf ();
-        void printEhdr();
-        void printPhdr();
-        void printShdr();
-        void getlsda(string section);
-        void closeElf();
+  public:
+    Elf_parser(char** t_file_ptr)
+      : file(t_file_ptr){};
+    void openElf();
+    void printEhdr();
+    void printPhdr();
+    void printShdr();
+    void printSym();
+    void getlsda(string section);
+    void closeElf();
 
-    private:
-        int elfClass = 0;
-        int fd, fbin;
-        size_t n, shstrndx;
+  private:
+    int m_elf_class{ 0 };
+    int m_fd, m_fbin;
+    size_t m_n, m_shstrndx;
 
-        char **file;
+    char** m_file;
 
-        char * name;
-        Elf_Scn * scn ;
-        Elf_Data * data ;
+    char* m_name;
+    Elf_Scn* m_scn;
+    Elf_Data* m_data;
 
-        Elf* e; 
-        GElf_Ehdr ehdr;
-        GElf_Phdr phdr;
-        GElf_Shdr shdr;
+    Elf* m_e;
+    GElf_Ehdr m_ehdr;
+    GElf_Phdr m_phdr;
+    GElf_Shdr m_shdr;
+    Gelf_Sym m_sym;
 };
 
-void Elf_parser::openElf()
+void ElfParser::openElf()
 {
-    if ( elf_version(EV_CURRENT) == EV_NONE ) 
-    {
-        errx(EX_SOFTWARE , "ELF library initialization failed : %s " , elf_errmsg ( -1));
+    if (elf_version(EV_CURRENT) == EV_NONE) {
+        errx(EX_SOFTWARE,
+             "ELF library initialization failed : %s ",
+             elf_errmsg(-1));
     }
-    if (( fd = open ( file[1] , O_RDONLY , 0)) < 0)
-    {
-        err (EX_NOINPUT , "open \%s\" failed " , file[1]);
+    if ((m_fd = open(m_file[1], O_RDONLY, 0)) < 0) {
+        err(EX_NOINPUT, "open \%s\" failed ", m_file[1]);
     }
-    if (( e = elf_begin ( fd , ELF_C_READ , NULL )) == NULL )
-    {
-        errx (EX_SOFTWARE , "elf_begin () failed : %s . " , elf_errmsg ( -1)); 
+    if ((m_e = elf_begin(m_fd, ELF_C_READ, NULL)) == NULL) {
+        errx(EX_SOFTWARE, "elf_begin () failed : %s . ", elf_errmsg(-1));
     }
-    if(elf_kind (e) != ELF_K_ELF)
-    {
-        errx(EX_DATAERR, "\"%s\" is not an ELF object. ", file[1]);
+    if (elf_kind(m_e) != ELF_K_ELF) {
+        errx(EX_DATAERR, "\"%s\" is not an ELF object. ", m_file[1]);
     }
-    println("{} {}-bit ELF object\n", file[1], elfClass == ELFCLASS32 ? 32 : 64);
+    std::println(
+      "{} {}-bit ELF object\n", m_file[1], m_elf_class == ELFCLASS32 ? 32 : 64);
 }
 
-void Elf_parser::printEhdr()
+void ElfParser::printEhdr()
 {
-    if((gelf_getehdr(e, &ehdr)) == NULL)
-    {
+    if ((gelf_getehdr(m_e, &m_ehdr)) == NULL) {
         errx(EX_SOFTWARE, "getehdr() failed: %s.", elf_errmsg(-1));
     }
-    println("ELF Header");
-    println("====================");
+    std::println("ELF Header");
+    std::println("====================");
     print("ident: ");
-    for(int i = 0; i < 16; i++)
-    {
+    for (int i = 0; i < 16; i++) {
         print("0x{:X}, ", ehdr.e_ident[i]);
     }
-    println("");
-    println("type: 0x{:X}", ehdr.e_type);
-    println("machine: 0x{:X}", ehdr.e_machine);
-    println("version: 0x{:X}", ehdr.e_version);
-    println("entry: 0x{:X}", ehdr.e_entry);
-    println("phoff: 0x{:X}", ehdr.e_phoff);
-    println("shoff: 0x{:X}", ehdr.e_shoff);
-    println("flags: 0x{:X}", ehdr.e_flags);
-    println("ehsize: 0x{:X}", ehdr.e_ehsize);
-    println("phentsize: 0x{:X}", ehdr.e_phentsize);
-    println("shentsize: 0x{:X}", ehdr.e_shentsize);
-    println("shnum: 0x{:X}", ehdr.e_shnum);
-    println("phnum: 0x{:X}", ehdr.e_phnum);
+    std::println("");
+    std::println("type: 0x{:X}", ehdr.e_type);
+    std::println("machine: 0x{:X}", ehdr.e_machine);
+    std::println("version: 0x{:X}", ehdr.e_version);
+    std::println("entry: 0x{:X}", ehdr.e_entry);
+    std::println("phoff: 0x{:X}", ehdr.e_phoff);
+    std::println("shoff: 0x{:X}", ehdr.e_shoff);
+    std::println("flags: 0x{:X}", ehdr.e_flags);
+    std::println("ehsize: 0x{:X}", ehdr.e_ehsize);
+    std::println("phentsize: 0x{:X}", ehdr.e_phentsize);
+    std::println("shentsize: 0x{:X}", ehdr.e_shentsize);
+    std::println("shnum: 0x{:X}", ehdr.e_shnum);
+    std::println("phnum: 0x{:X}", ehdr.e_phnum);
 }
 
-void Elf_parser::printPhdr()
+void ElfParser::printPhdr()
 {
-    if (elf_getphdrnum (e , &n) != 0) 
-    {
+    if (elf_getphdrnum(m_e, &m_n) != 0) {
         errx(EX_SOFTWARE, "getphdrnum() failed: %s.", elf_errmsg(-1));
     }
 
-    println("Program Header: ({})", static_cast<int>(n));
-    println("====================");
+    std::println("Program Header: ({})", static_cast<int>(n));
+    std::println("====================");
 
-    for(int i = 0; i < static_cast<int>(n); i++)
-    {
-        if (gelf_getphdr (e , i, &phdr ) != &phdr )
-        {
+    for (int i = 0; i < static_cast<int>(m_n); i++) {
+        if (gelf_getphdr(m_e, i, &m_phdr) != &m_phdr) {
             errx(EX_SOFTWARE, "getphdr() failed: %s.", elf_errmsg(-1));
         }
 
-        println("Program Header: {}", i);
-        println("type : 0x{:X}", phdr.p_type);			
-        println("flags : 0x{:X}", phdr.p_flags);		
-        println("offset : 0x{:X}", phdr.p_offset);		
-        println("vaddr : 0x{:X}", phdr.p_vaddr);		
-        println("paddr : 0x{:X}", phdr.p_paddr);		
-        println("filez : 0x{:X}", phdr.p_filesz);		
-        println("memz : 0x{:X}", phdr.p_memsz);		
-        println("align : 0x{:X}", phdr.p_align);
-        println("====================");
-    }		
+        std::println("Program Header: {}", i);
+        std::println("type : 0x{:X}", phdr.p_type);
+        std::println("flags : 0x{:X}", phdr.p_flags);
+        std::println("offset : 0x{:X}", phdr.p_offset);
+        std::println("vaddr : 0x{:X}", phdr.p_vaddr);
+        std::println("paddr : 0x{:X}", phdr.p_paddr);
+        std::println("filez : 0x{:X}", phdr.p_filesz);
+        std::println("memz : 0x{:X}", phdr.p_memsz);
+        std::println("align : 0x{:X}", phdr.p_align);
+        std::println("====================");
+    }
 }
 
-void Elf_parser::printShdr()
+void ElfParser::printShdr()
 {
-    if (elf_getshdrstrndx (e , &shstrndx ) != 0) 
-    {
+    if (elf_getshdrstrndx(m_e, &m_shstrndx) != 0) {
         errx(EX_SOFTWARE, "getshdrstrndx() failed: %s.", elf_errmsg(-1));
     }
 
-    scn = NULL;
+    m_scn = NULL;
 
-    println("Section Header: ({})", static_cast<int>(shstrndx));
-    println("====================");
+    std::println("Section Header: ({})", static_cast<int>(m_shstrndx));
+    std::println("====================");
 
-    while((scn = elf_nextscn(e, scn)) != NULL)
-    {
-        if(gelf_getshdr(scn, &shdr ) != &shdr )
-        {
+    while ((scn = elf_nextscn(m_e, m_scn)) != NULL) {
+        if (gelf_getshdr(m_scn, &m_shdr) != &m_shdr) {
             errx(EX_SOFTWARE, "getshdr() failed: %s.", elf_errmsg(-1));
         }
 
-        if((name = elf_strptr(e, shstrndx, shdr.sh_name)) == NULL )
-        {
+        if ((m_name = elf_strptr(m_e, m_shstrndx, shdr.sh_name)) == NULL) {
             errx(EX_SOFTWARE, "elf_strptr() failed: %s.", elf_errmsg(-1));
         }
 
-        println("Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(scn)), name );		
-        println("   type : 0x{:X}", shdr.sh_type);		
-        println("   flags : 0x{:X}", shdr.sh_flags);		
-        println("   addr : 0x{:X}", shdr.sh_addr);		
-        println("   offset : 0x{:X}", shdr.sh_offset);		
-        println("   size : 0x{:X}", shdr.sh_size);		
-        println("   link : 0x{:X}", shdr.sh_link);		
-        println("   info : 0x{:X}", shdr.sh_info);
-        println("   addralign : 0x{:X}", shdr.sh_addralign);
-        println("   entsize : 0x{:X}", shdr.sh_entsize);
-        println("====================");
-    }	
+        std::println(
+          "Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(m_scn)), m_name);
+        std::println("   type : 0x{:X}", shdr.sh_type);
+        std::println("   flags : 0x{:X}", shdr.sh_flags);
+        std::println("   addr : 0x{:X}", shdr.sh_addr);
+        std::println("   offset : 0x{:X}", shdr.sh_offset);
+        std::println("   size : 0x{:X}", shdr.sh_size);
+        std::println("   link : 0x{:X}", shdr.sh_link);
+        std::println("   info : 0x{:X}", shdr.sh_info);
+        std::println("   addralign : 0x{:X}", shdr.sh_addralign);
+        std::println("   entsize : 0x{:X}", shdr.sh_entsize);
+        std::println("====================");
+    }
 }
 
-void Elf_parser::getlsda(string section)
+void ElfParser::getLsda(string section)
 {
-    if (elf_getshdrstrndx (e , &shstrndx ) != 0) 
-    {
+    if (elf_getshdrstrndx(m_e, &m_shstrndx) != 0) {
         errx(EX_SOFTWARE, "getshdrstrndx() failed: %s.", elf_errmsg(-1));
     }
 
-    scn = NULL;
+    m_scn = NULL;
 
-    while((scn = elf_nextscn(e, scn)) != NULL)
-    {
-        if(gelf_getshdr(scn, &shdr ) != &shdr )
-        {
+    while ((scn = elf_nextscn(m_e, m_scn)) != NULL) {
+        if (gelf_getshdr(m_scn, &m_shdr) != &m_shdr) {
             errx(EX_SOFTWARE, "getshdr() failed: %s.", elf_errmsg(-1));
         }
 
-        if((name = elf_strptr(e, shstrndx, shdr.sh_name)) == NULL )
-        {
+        if ((m_name = elf_strptr(m_e, m_shstrndx, shdr.sh_name)) == NULL) {
             errx(EX_SOFTWARE, "elf_strptr() failed: %s.", elf_errmsg(-1));
         }
 
-        if(static_cast<string>(name) == section)
-        {
-            println("LSDA found");
-            println("Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(scn)), name);	
-            println("====================");
+        if (static_cast<string>(m_name) == section) {
+            std::println("LSDA found");
+            std::println(
+              "Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(scn)), name);
+            std::println("====================");
 
-            if(fbin = open("../binary/lsda", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR) < 0)
-            {
-                err (EX_NOINPUT , "open ../binary/lsda failed " );
-            }
-            
-            while((data = elf_getdata(scn, data)) != NULL)
-            {
-                write(fbin, data->d_buf, data->d_size);
+            m_fbin = open("binary/lsda", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+
+            while ((data = elf_getdata(m_scn, m_data)) != NULL) {
+                write(m_fbin, m_data->d_buf, m_data->d_size);
             }
 
-            close(fbin);
+            close(m_fbin);
             break;
         }
     }
 }
 
-void Elf_parser::closeElf()
+void ElfParser::getSym()
 {
-    close(fd);
-    println("ELF file closed");
+    if (gelf_getsym(m_scn, &m_shdr) != &m_shdr) {
+        errx(EX_SOFTWARE, "getshdr() failed: %s.", elf_errmsg(-1));
+    }
+}
+
+void ElfParser::closeElf()
+{
+    close(m_fd);
+    std::println("ELF file closed");
 }
