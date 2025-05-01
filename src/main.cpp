@@ -5,15 +5,17 @@
 
 int main(int argc, char** argv)
 {
-    string lsda = ".gcc_except_table";
-    string if (argc != 2)
+    std::string lsda = ".gcc_except_table";
+    std::string symtab = ".symtab";
+    if (argc != 2)
     {
         errx(EX_USAGE, "usage : %s file - name ", argv[0]);
     }
 
-    Elf_parser elf(argv);
+    ElfParser elf(argv);
     elf.openElf();
-    elf.getLsda(lsda);
+    elf.printShdr();
+    elf.getSection(lsda);
 
     elf.closeElf();
     return 0;
