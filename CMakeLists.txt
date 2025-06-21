@@ -38,13 +38,13 @@ list(APPEND COMPILER_BUILD_FLAGS
 -fdata-sections
 $<$<COMPILE_LANGUAGE:CXX>:-fexceptions -frtti>)
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-message("Building Debug")
-list(APPEND COMPILER_BUILD_FLAGS -g -Og)
-
-else()
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
 message("Building release")
 list(APPEND COMPILER_BUILD_FLAGS -O2)
+
+else()
+message("Building Debug")
+list(APPEND COMPILER_BUILD_FLAGS -g -Og)
 
 endif()
 
