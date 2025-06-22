@@ -4,13 +4,11 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
 
-# TODO: Maybe get rid of? Don't remember why its here and I think libhal's cmake utils handles this
-# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# add_custom_target(copy_compile_commands ALL
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#     ${CMAKE_BINARY_DIR}/compile_commands.json
-#     ${CMAKE_SOURCE_DIR}/compile_commands.json
-#     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(ctre REQUIRED)
+
+
 
 # Find package dependancies
 #TODO: Remove due to this being a temporary patch for libraries to work
@@ -26,6 +24,11 @@ target_link_libraries(${PROJECT_NAME} libelf::libelf)
 
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} libelf::libelf)
+add_executable(${PROJECT_NAME} src/main.cpp src/gcc_parse.cpp)
+
+# Add include directories
+target_include_directories(${PROJECT_NAME} PUBLIC include/)
+target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre)
 
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   

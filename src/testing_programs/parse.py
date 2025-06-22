@@ -1,16 +1,15 @@
 import os
 import queue
-import subprocess
 import re
 from typing import Iterator
 
 
 class Node:
     def __init__(self, nid: int, func_name: str, *, 
-                 demangled_name: str = None, 
-                 visibility: str = None, 
-                 availability: str = None, 
-                 flags: str = None, **kwargs) -> None: # kwargs is hack to accept extra uneeded params because lazy
+                 demangled_name: str = None,  # type: ignore
+                 visibility: str = None, # type: ignore
+                 availability: str = None, # type: ignore
+                 flags: str = None, **kwargs) -> None: # kwargs is hack to accept extra uneeded params because lazy # type: ignore
         self.callees: list[Node] = []
         self.callers: list[Node] = []
         self.nid = nid
@@ -89,6 +88,8 @@ def parse_file(file_path: str, print_result = False) -> Node:
         for i, entry in enumerate(filter(lambda s: s and not s.isspace(), map(lambda s: s.strip(), raw.split("\n")))):
             if i == 0:
                 m = fn_name_re.match(entry)
+                if m is None:
+                    raise ValueError("Bad re")
                 fn_name, fn_id_str = m.group(0).split("/")
                 d['name'] = fn_name
                 d['id'] = int(fn_id_str)
@@ -118,7 +119,7 @@ def parse_file(file_path: str, print_result = False) -> Node:
         if not entry['calls'] and not entry['called_by']:
             continue
 
-        n = Node(entry['id'], entry['name'], **entry)
+        n = Node(int(entry['id']), entry['name'], **entry)
         if n not in nodes:
             nodes[entry['name']] = n
     
