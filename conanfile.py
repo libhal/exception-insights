@@ -27,7 +27,7 @@ class safe_conan(ConanFile):
     format: `self.requires(<package_name_on_conancenter>)`
     """
     def requirements(self):
-        pass
+        self.requires("ctre/[^3.9.0]")
 
     def generate(self):
         c = CMake(self)

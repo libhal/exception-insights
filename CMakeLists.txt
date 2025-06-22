@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.27)
 project(safe LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(ctre REQUIRED)
+
+
 add_custom_target(copy_compile_commands ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_BINARY_DIR}/compile_commands.json
@@ -10,10 +14,11 @@ add_custom_target(copy_compile_commands ALL
 
 
 # Create the executable target
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/gcc_parse.cpp)
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
+target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre)
 
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   
@@ -36,6 +41,3 @@ list(APPEND COMPILER_BUILD_FLAGS -g -Og)
 endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
-
-# Link against ZLIB
-# target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
