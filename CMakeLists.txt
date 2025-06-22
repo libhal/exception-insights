@@ -1,20 +1,19 @@
 cmake_minimum_required(VERSION 3.27)
 project(safe LANGUAGES CXX)
 
-# TODO: Maybe get rid of? Don't remember why its here and I think libhal's cmake utils handles this
-# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# add_custom_target(copy_compile_commands ALL
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#     ${CMAKE_BINARY_DIR}/compile_commands.json
-#     ${CMAKE_SOURCE_DIR}/compile_commands.json
-#     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(ctre REQUIRED)
+
+
 
 
 # Create the executable target
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/gcc_parse.cpp)
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
+target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre)
 
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   
