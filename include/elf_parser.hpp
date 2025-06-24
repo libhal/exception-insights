@@ -108,6 +108,11 @@ class ElfParser
       m_section_data;  //!< Map that stores the data from all ELF section.
 
     bool m_elf_header_loaded;  //!< Elf header object initialization flag
+<<<<<<< HEAD
+=======
+    bool m_file_opened;  //!< Identifies if the file was able to be opened.
+    bool m_file_loaded;  //!< Elf Object initialization flag
+>>>>>>> b975b74 (Reworked the parser to store the elf file headers in maps and vectors, move loading of the headers to the constructor, reformat to fit libhal formatting standard)
 
     /**
      * @brief Parses out the ELF file header and stores it into m_elf_header.

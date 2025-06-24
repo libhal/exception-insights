@@ -13,7 +13,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
 #     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
 # Find package dependancies
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") #TODO: Remove due to this being a temporary patch for libraries to work
+#TODO: Remove due to this being a temporary patch for libraries to work
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 find_package(libelf REQUIRED)
 
 # Create the executable target
