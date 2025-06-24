@@ -7,7 +7,7 @@
  *
  * @copyright Copyright (c) 2025
  *
- **/
+ */
 
 #include "elf_parser.hpp"
 

@@ -1,12 +1,24 @@
+/**
+ * @file elf_parser.hpp
+ * @author Michael Chan
+ * @brief ELF file parser header file
+ * @version 0.1
+ * @date 2025-07-17
+ *
+ * @copyright Copyright (c) 2025
+ *
+ */
+
 #pragma once
-#include <bitset>
-#include <err.h>
+
+#include <elf.h>
 #include <fcntl.h>
 #include <unistd.h>
 
 #include <elf.h>
 #include <gelf.h>
 #include <libelf.h>
+
 #include <print>
 #include <string_view>
 #include <system_error>
