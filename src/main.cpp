@@ -1,23 +1,21 @@
-#include "../include/elf_parser.hpp"
 #include <bitset>
 #include <print>
 #include <string>
 
-int main(int argc, char** argv)
+#include "../include/elf_parser.hpp"
+int main(int argc, char* argv[])
 {
-    std::string lsda = ".gcc_except_table";
-    std::string symtab = ".symtab";
-    if (argc != 2)
+    //const std::string_view lsda = ".gcc_except_table";
+
+    if (argc < 2)
     {
-        errx(EX_USAGE, "usage : %s file - name ", argv[0]);
+        std::print(stderr, "usage : %s file - name {}", argv[0]);
     }
 
-    ElfParser elf(argv);
-    elf.openElf();
-    elf.printShdr();
-    elf.getSection(lsda);
+    ElfParser elf(argv[1]);
+    elf.printElfHeader();
+    //elf.printSectionHeader();
+    elf.printProgramHeader();
 
-    elf.closeElf();
     return 0;
-    ;
 }
