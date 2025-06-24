@@ -1,191 +1,167 @@
+/**
+ * @file elf_parser.hpp
+ * @author Michael Chan
+ * @brief ELF file parser header file
+ * @version 0.1
+ * @date 2025-07-17
+ *
+ * @copyright Copyright (c) 2025
+ *
+ */
+
 #pragma once
-#include <bitset>
-#include <err.h>
+
+#include <elf.h>
 #include <fcntl.h>
+#include <unistd.h>
+
 #include <gelf.h>
 #include <libelf.h>
+
 #include <print>
-#include <stdlib.h>
-#include <string>
-#include <sysexits.h>
-#include <unistd.h>
+#include <string_view>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 
 class ElfParser
 {
   public:
-    ElfParser(char** t_file_ptr)
-      : m_file(t_file_ptr){};
-    void openElf();
-    void printEhdr();
-    void printPhdr();
-    void printShdr();
-    //void printSym();
-    void getSection(std::string section);
-    void closeElf();
+    /**
+     * @brief Constructor of the ElfParser object
+     *
+     * @param p_file_name
+     */
+    ElfParser(std::string_view p_file_name)
+      : m_file_name(p_file_name)
+    {
+        if (elf_version(EV_CURRENT) == EV_NONE) {
+            std::println(
+              stderr, "ELF library initialization failed : {}", elf_errmsg(-1));
+        }
+
+        if ((m_file = open(m_file_name.c_str(), O_RDONLY, 0)) < 0) {
+            std::println(stderr, "\{} failed to open", elf_errmsg(-1));
+            m_file_opened = false;
+        } else {
+            m_file_opened = true;
+        }
+
+        if ((m_elf = elf_begin(m_file, ELF_C_READ, NULL)) == NULL) {
+            std::println(
+              stderr, "Elf file failed to load : {}.", elf_errmsg(-1));
+            m_file_loaded = false;
+        } else {
+            m_file_loaded = true;
+        }
+
+        if (m_file_loaded && m_file_opened) {
+            if (elf_kind(m_elf) != ELF_K_ELF) {
+                std::println(stderr, "\{} is not an ELF object. ", m_file_name);
+            }
+            std::println("{} {}-bit ELF object\n",
+                         m_file_name,
+                         m_elf_class == ELFCLASS32 ? 32 : 64);
+            m_load_elf_header();
+            m_load_section_header();
+            m_load_program_header();
+        }
+    };
+
+    /**
+     * @brief Destroy the Elf Parser object
+     */
+    ~ElfParser()
+    {
+        close(m_file);
+        std::println("ELF file closed");
+    }
+
+    /**
+     * @brief Prints the elf header
+     */
+    void print_elf_header();
+
+    /**
+     * @brief Prints out all section headers.
+     */
+    void print_section_header();
+
+    /**
+     * @brief Prints out all program headers.
+     */
+    void print_program_header();
+
+    /**
+     * @brief Returns the section address based on the given section name.The
+     * address of the section depending on the ELF class of the ELF file.
+     *
+     * @param p_section
+     * @return std::variant<uint32_t, uint64_t>
+     */
+    std::variant<uint32_t, uint64_t> get_section_addr(
+      std::string_view p_section);
+
+    /**
+     * @brief Returns the section offset based on the given section name. The
+     * offset of the section depending on the ELF class of the ELF file.
+     *
+     * @param p_section
+     * @return std::variant<uint32_t, uint64_t>
+     */
+    std::variant<uint32_t, uint64_t> get_section_offset(
+      std::string_view p_section);
+
+    /**
+     * @brief Returns the section size based on the given section name. The size
+     * of the section depending on the ELF class of the ELF file
+     *
+     * @param p_section
+     * @return std::variant<uint32_t, uint64_t>
+     */
+    std::variant<uint32_t, uint64_t> get_section_size(
+      std::string_view p_section);
+
+    /**
+     * @brief The section data based on the given section name.
+     *
+     * @param p_section Name of the section
+     * @return std::vector<std::byte> The data of the given section. If the
+     * section is the type NOBITS, the returning data will be null.
+     */
+    std::vector<std::byte> get_section_data(std::string_view p_section);
 
   private:
-    int m_elf_class{ 0 };
-    int m_fd, m_fbin;
-    size_t m_n, m_shstrndx;
+    int m_elf_class;  //!< Identifies the binary architecture of the ELF file.
+    int m_file;       //!< The file meant to be analysed.
+    std::string m_file_name;  //!< The file name.
 
-    char** m_file;
+    Elf* m_elf;              //!< ELF object from libelf.
+    GElf_Ehdr m_elf_header;  //!< ELF Header object.
+    std::vector<GElf_Phdr>
+      m_program_header;  //!< Vector that stores ELF program header objects.
+    std::unordered_map<std::string_view, GElf_Shdr>
+      m_section_header;  //!< Map that stores ELF section header objects.
+    std::unordered_map<std::string_view, std::vector<std::byte>>
+      m_section_data;  //!< Map that stores the data from all ELF section.
 
-    char* m_name;
-    Elf_Scn* m_scn;
-    Elf_Data* m_data;
+    bool m_elf_header_loaded;  //!< Elf header object initialization flag
+    bool m_file_opened;  //!< Identifies if the file was able to be opened.
+    bool m_file_loaded;  //!< Elf Object initialization flag
 
-    Elf* m_e;
-    GElf_Ehdr m_ehdr;
-    GElf_Phdr m_phdr;
-    GElf_Shdr m_shdr;
-    //Gelf_Sym m_sym;
+    /**
+     * @brief Parses out the ELF file header and stores it into m_elf_header.
+     */
+    void m_load_elf_header();
+
+    /**
+     * @brief Parses out all section headers into m_section_header and all
+     * section. data into m_sectionData.
+     */
+    void m_load_section_header();
+
+    /**
+     * @brief Parses out all headers and stores them into m_program_header.
+     */
+    void m_load_program_header();
 };
-
-void ElfParser::openElf()
-{
-    if (elf_version(EV_CURRENT) == EV_NONE) {
-        errx(EX_SOFTWARE,
-             "ELF library initialization failed : %s ",
-             elf_errmsg(-1));
-    }
-    if ((m_fd = open(m_file[1], O_RDONLY, 0)) < 0) {
-        err(EX_NOINPUT, "open \%s\" failed ", m_file[1]);
-    }
-    if ((m_e = elf_begin(m_fd, ELF_C_READ, NULL)) == NULL) {
-        errx(EX_SOFTWARE, "elf_begin () failed : %s . ", elf_errmsg(-1));
-    }
-    if (elf_kind(m_e) != ELF_K_ELF) {
-        errx(EX_DATAERR, "\"%s\" is not an ELF object. ", m_file[1]);
-    }
-    std::println(
-      "{} {}-bit ELF object\n", m_file[1], m_elf_class == ELFCLASS32 ? 32 : 64);
-}
-
-void ElfParser::printEhdr()
-{
-    if ((gelf_getehdr(m_e, &m_ehdr)) == NULL) {
-        errx(EX_SOFTWARE, "getehdr() failed: %s.", elf_errmsg(-1));
-    }
-    std::println("ELF Header");
-    std::println("====================");
-    std::print("ident: ");
-    for (int i = 0; i < 16; i++) {
-        std::print("0x{:X}, ", m_ehdr.e_ident[i]);
-    }
-    std::println("");
-    std::println("type: 0x{:X}", m_ehdr.e_type);
-    std::println("machine: 0x{:X}", m_ehdr.e_machine);
-    std::println("version: 0x{:X}", m_ehdr.e_version);
-    std::println("entry: 0x{:X}", m_ehdr.e_entry);
-    std::println("phoff: 0x{:X}", m_ehdr.e_phoff);
-    std::println("shoff: 0x{:X}", m_ehdr.e_shoff);
-    std::println("flags: 0x{:X}", m_ehdr.e_flags);
-    std::println("ehsize: 0x{:X}", m_ehdr.e_ehsize);
-    std::println("phentsize: 0x{:X}", m_ehdr.e_phentsize);
-    std::println("shentsize: 0x{:X}", m_ehdr.e_shentsize);
-    std::println("shnum: 0x{:X}", m_ehdr.e_shnum);
-    std::println("phnum: 0x{:X}", m_ehdr.e_phnum);
-}
-
-void ElfParser::printPhdr()
-{
-    if (elf_getphdrnum(m_e, &m_n) != 0) {
-        errx(EX_SOFTWARE, "getphdrnum() failed: %s.", elf_errmsg(-1));
-    }
-
-    std::println("Program Header: ({})", static_cast<int>(m_n));
-    std::println("====================");
-
-    for (int i = 0; i < static_cast<int>(m_n); i++) {
-        if (gelf_getphdr(m_e, i, &m_phdr) != &m_phdr) {
-            errx(EX_SOFTWARE, "getphdr() failed: %s.", elf_errmsg(-1));
-        }
-
-        std::println("Program Header: {}", i);
-        std::println("type : 0x{:X}", m_phdr.p_type);
-        std::println("flags : 0x{:X}", m_phdr.p_flags);
-        std::println("offset : 0x{:X}", m_phdr.p_offset);
-        std::println("vaddr : 0x{:X}", m_phdr.p_vaddr);
-        std::println("paddr : 0x{:X}", m_phdr.p_paddr);
-        std::println("filez : 0x{:X}", m_phdr.p_filesz);
-        std::println("memz : 0x{:X}", m_phdr.p_memsz);
-        std::println("align : 0x{:X}", m_phdr.p_align);
-        std::println("====================");
-    }
-}
-
-void ElfParser::printShdr()
-{
-    if (elf_getshdrstrndx(m_e, &m_shstrndx) != 0) {
-        errx(EX_SOFTWARE, "getshdrstrndx() failed: %s.", elf_errmsg(-1));
-    }
-
-    m_scn = NULL;
-
-    std::println("Section Header: ({})", static_cast<int>(m_shstrndx));
-    std::println("====================");
-
-    while ((m_scn = elf_nextscn(m_e, m_scn)) != NULL) {
-        if (gelf_getshdr(m_scn, &m_shdr) != &m_shdr) {
-            errx(EX_SOFTWARE, "getshdr() failed: %s.", elf_errmsg(-1));
-        }
-
-        if ((m_name = elf_strptr(m_e, m_shstrndx, m_shdr.sh_name)) == NULL) {
-            errx(EX_SOFTWARE, "elf_strptr() failed: %s.", elf_errmsg(-1));
-        }
-
-        std::println(
-          "Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(m_scn)), m_name);
-        std::println("   type : 0x{:X}", m_shdr.sh_type);
-        std::println("   flags : 0x{:X}", m_shdr.sh_flags);
-        std::println("   addr : 0x{:X}", m_shdr.sh_addr);
-        std::println("   offset : 0x{:X}", m_shdr.sh_offset);
-        std::println("   size : 0x{:X}", m_shdr.sh_size);
-        std::println("   link : 0x{:X}", m_shdr.sh_link);
-        std::println("   info : 0x{:X}", m_shdr.sh_info);
-        std::println("   addralign : 0x{:X}", m_shdr.sh_addralign);
-        std::println("   entsize : 0x{:X}", m_shdr.sh_entsize);
-        std::println("====================");
-    }
-}
-
-void ElfParser::getSection(std::string section)
-{
-    if (elf_getshdrstrndx(m_e, &m_shstrndx) != 0) {
-        errx(EX_SOFTWARE, "getshdrstrndx() failed: %s.", elf_errmsg(-1));
-    }
-
-    m_scn = NULL;
-
-    while ((m_scn = elf_nextscn(m_e, m_scn)) != NULL) {
-        if (gelf_getshdr(m_scn, &m_shdr) != &m_shdr) {
-            errx(EX_SOFTWARE, "getshdr() failed: %s.", elf_errmsg(-1));
-        }
-
-        if ((m_name = elf_strptr(m_e, m_shstrndx, m_shdr.sh_name)) == NULL) {
-            errx(EX_SOFTWARE, "elf_strptr() failed: %s.", elf_errmsg(-1));
-        }
-
-        if (static_cast<std::string>(m_name) == section) {
-            std::println("{} found", static_cast<std::string>(m_name));
-            std::println(
-              "Section {}: {}", static_cast<uintmax_t>(elf_ndxscn(m_scn)), m_name);
-            std::println("====================");
-
-            m_fbin = open("binary/lsda", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-
-            while ((m_data = elf_getdata(m_scn, m_data)) != NULL) {
-                write(m_fbin, m_data->d_buf, m_data->d_size);
-            }
-
-            close(m_fbin);
-            break;
-        }
-    }
-}
-
-void ElfParser::closeElf()
-{
-    close(m_fd);
-    std::println("ELF file closed");
-}
