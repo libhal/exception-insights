@@ -1,6 +1,6 @@
 from conan import ConanFile
 from conan.errors import ConanException
-from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import copy
 from conan.tools.build import check_min_cppstd
 import os
@@ -27,13 +27,12 @@ class safe_conan(ConanFile):
     format: `self.requires(<package_name_on_conancenter>)`
     """
     def requirements(self):
-        pass
+        self.requires("libelf/0.8.13")
 
     def generate(self):
         c = CMake(self)
         c.configure()
         c.build(target="copy_compile_commands")
-
     """
     Manage requirements to build our project, this includes all build tools.
     """
