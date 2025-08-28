@@ -8,6 +8,13 @@ project(safe LANGUAGES CXX)
 #     ${CMAKE_BINARY_DIR}/compile_commands.json
 #     ${CMAKE_SOURCE_DIR}/compile_commands.json
 #     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
+# TODO: Maybe get rid of? Don't remember why its here and I think libhal's cmake utils handles this
+# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# add_custom_target(copy_compile_commands ALL
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#     ${CMAKE_BINARY_DIR}/compile_commands.json
+#     ${CMAKE_SOURCE_DIR}/compile_commands.json
+#     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
 # Find package dependancies
 #TODO: Remove due to this being a temporary patch for libraries to work
@@ -47,16 +54,6 @@ endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
-libhal_unit_test(SOURCES
-    tests/main.test.cpp
-    tests/testing.test.cpp
-
-    PACKAGES
-    tl-function-ref
-
-    LINK_LIBRARIES
-    tl::function-ref
-)
 libhal_unit_test(SOURCES
     tests/main.test.cpp
     tests/testing.test.cpp
