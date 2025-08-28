@@ -1,17 +1,13 @@
 cmake_minimum_required(VERSION 3.27)
 project(safe LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
-
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_custom_target(copy_compile_commands ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_BINARY_DIR}/compile_commands.json
-    ${CMAKE_SOURCE_DIR}/compile_commands.json
-    DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
+# TODO: Maybe get rid of? Don't remember why its here and I think libhal's cmake utils handles this
+# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# add_custom_target(copy_compile_commands ALL
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#     ${CMAKE_BINARY_DIR}/compile_commands.json
+#     ${CMAKE_SOURCE_DIR}/compile_commands.json
+#     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
 # Find package dependancies
 #TODO: Remove due to this being a temporary patch for libraries to work
@@ -50,5 +46,13 @@ endif()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
-# Link against ZLIB
-# target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+libhal_unit_test(SOURCES
+    tests/main.test.cpp
+    tests/testing.test.cpp
+
+    PACKAGES
+    tl-function-ref
+
+    LINK_LIBRARIES
+    tl::function-ref
+)
