@@ -43,6 +43,8 @@ class safe_conan(ConanFile):
         self.tool_requires("cmake/[^3.27.1]")
         self.tool_requires("libhal-cmake-util/[^4.0.5]")
         self.test_requires("boost-ext-ut/2.1.0")
+        self.tool_requires("libhal-cmake-util/[^4.0.5]")
+        self.test_requires("boost-ext-ut/2.1.0")
 
     """
     Manages the layout of where build artifacts will go.
