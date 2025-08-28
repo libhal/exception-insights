@@ -62,3 +62,16 @@ libhal_unit_test(SOURCES
     tl::function-ref
     libelf::libelf
 )
+libhal_unit_test(SOURCES
+    tests/main.test.cpp
+    # tests/testing.test.cpp
+
+    src/elf_parser.cpp
+
+    PACKAGES
+    tl-function-ref
+
+    LINK_LIBRARIES
+    tl::function-ref
+    libelf::libelf
+)

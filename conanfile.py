@@ -29,9 +29,7 @@ class safe_conan(ConanFile):
     """
     def requirements(self):
         self.requires("libelf/0.8.13")
-
         self.requires("tl-function-ref/1.0.0")
-        self.requires("ctre/[^3.9.0]")
 
     def generate(self):
         c = CMake(self)
@@ -42,8 +40,6 @@ class safe_conan(ConanFile):
     """
     def build_requirements(self):
         self.tool_requires("cmake/[^3.27.1]")
-        self.tool_requires("libhal-cmake-util/[^4.0.5]")
-        self.test_requires("boost-ext-ut/2.1.0")
         self.tool_requires("libhal-cmake-util/[^4.0.5]")
         self.test_requires("boost-ext-ut/2.1.0")
 
