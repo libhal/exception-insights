@@ -32,50 +32,12 @@ class ElfParser
      *
      * @param p_file_name
      */
-    ElfParser(std::string_view p_file_name)
-      : m_file_name(p_file_name)
-    {
-        if (elf_version(EV_CURRENT) == EV_NONE) {
-            std::println(
-              stderr, "ELF library initialization failed : {}", elf_errmsg(-1));
-        }
-
-        if ((m_file = open(m_file_name.c_str(), O_RDONLY, 0)) < 0) {
-            std::println(stderr, "\{} failed to open", elf_errmsg(-1));
-            m_file_opened = false;
-        } else {
-            m_file_opened = true;
-        }
-
-        if ((m_elf = elf_begin(m_file, ELF_C_READ, NULL)) == NULL) {
-            std::println(
-              stderr, "Elf file failed to load : {}.", elf_errmsg(-1));
-            m_file_loaded = false;
-        } else {
-            m_file_loaded = true;
-        }
-
-        if (m_file_loaded && m_file_opened) {
-            if (elf_kind(m_elf) != ELF_K_ELF) {
-                std::println(stderr, "\{} is not an ELF object. ", m_file_name);
-            }
-            std::println("{} {}-bit ELF object\n",
-                         m_file_name,
-                         m_elf_class == ELFCLASS32 ? 32 : 64);
-            m_load_elf_header();
-            m_load_section_header();
-            m_load_program_header();
-        }
-    };
+    ElfParser(std::string_view p_file_name);
 
     /**
      * @brief Destroy the Elf Parser object
      */
-    ~ElfParser()
-    {
-        close(m_file);
-        std::println("ELF file closed");
-    }
+    ~ElfParser();
 
     /**
      * @brief Prints the elf header
@@ -146,8 +108,6 @@ class ElfParser
       m_section_data;  //!< Map that stores the data from all ELF section.
 
     bool m_elf_header_loaded;  //!< Elf header object initialization flag
-    bool m_file_opened;  //!< Identifies if the file was able to be opened.
-    bool m_file_loaded;  //!< Elf Object initialization flag
 
     /**
      * @brief Parses out the ELF file header and stores it into m_elf_header.
