@@ -27,10 +27,6 @@ target_link_libraries(${PROJECT_NAME} libelf::libelf)
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} libelf::libelf)
 
-
-# Add include directories
-target_include_directories(${PROJECT_NAME} PUBLIC include/)
-
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   
 -Werror
