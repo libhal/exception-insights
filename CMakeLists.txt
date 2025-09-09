@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.27)
 project(safe LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
 
 # TODO: Maybe get rid of? Don't remember why its here and I think libhal's cmake utils handles this
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -9,12 +12,20 @@ project(safe LANGUAGES CXX)
 #     ${CMAKE_SOURCE_DIR}/compile_commands.json
 #     DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json)
 
+# Find package dependancies
+#TODO: Remove due to this being a temporary patch for libraries to work
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
+find_package(libelf REQUIRED)
 
 # Create the executable target
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp)
 
-# Add include directories
-target_include_directories(${PROJECT_NAME} PUBLIC include/)
+#Linking Libraries
+target_link_libraries(${PROJECT_NAME} libelf::libelf)
+
+
+#Linking Libraries
+target_link_libraries(${PROJECT_NAME} libelf::libelf)
 
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   
