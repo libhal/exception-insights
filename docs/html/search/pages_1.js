@@ -1,4 +1,0 @@
-var searchData=
-[
-  ['exceptions_0',['SAFE: Static Analyzer For Exceptions',['../index.html',1,'']]]
-];
