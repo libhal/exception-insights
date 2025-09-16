@@ -2,6 +2,10 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,c++,c,cmake,conan
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,macos,c++,c,cmake,conan
 
+### Folder Directories ###
+html/
+latex/
+
 ### C ###
 # Prerequisites
 *.d
@@ -173,4 +177,6 @@ Temporary Items
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 .cache/
 build/
+.html/
+.latex/
 
