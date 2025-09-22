@@ -24,6 +24,12 @@ add_executable(${PROJECT_NAME} src/main.cpp
                                src/gcc_parse.cpp)
 
 
+#Linking Libraries
+add_executable(${PROJECT_NAME} src/main.cpp 
+                               src/elf_parser.cpp 
+                               src/gcc_parse.cpp)
+
+
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
 
