@@ -2,46 +2,40 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <string>
+#include <filesystem>
 
 // keep in mind of pathing!!!
-
-// more concentrated lsda
-std::vector<uint8_t> con_lsda() {
-    return {
-        0x02,                               // 2 call sites
-        0x00, 0x00, 0x00, 0x00,             // start 0
-        0x10, 0x00, 0x00, 0x00,             // length 0x10
-        0x20, 0x00, 0x00, 0x00,             // landing pad
-        0x01,                               // action index 1
-
-        0x10, 0x00, 0x00, 0x00,             // start 0x10
-        0x10, 0x00, 0x00, 0x00,             // length 0x10
-        0x40, 0x00, 0x00, 0x00,             // landing pad
-        0x02,                               // action index 2
-
-        0x02,                               // action count
-        0x01, 0x02,                         // action 1: type=1, next=2
-        0x02, 0x00                          // action 2: type=2, next=0
-    };
-}
-
-int main() 
+int main(int argc, char** argv) 
 {
-    // std::ifstream file("LSDA/lsda.bin", std::ios::binary);
-    // if (!file) {
-    //     std::cerr << "cant open lsda.bin\n";
-    //     return 1;
-    // }
+    // temporarily reading LSDA file before merging with main
+    const char* path = (argc >= 2 ? argv[1] : "LSDA/lsda");
+    std::ifstream file(path, std::ios::binary);
+    if (!file) 
+    {
+        path = "LSDA/lsda";
+        file.open(path, std::ios::binary);
+    }
+    if (!file) 
+    {
+        std::cerr << "cannot open LSDA file\n";
+        return 1;
+    }
 
-    // std::vector<uint8_t> lsda_data((std::istreambuf_iterator<char>(file)), {});
-    // Abi_parser parser(lsda_data);
-
-    std::vector<uint8_t> lsda_data = con_lsda();
+    std::vector<uint8_t> lsda_data(
+        (std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     Abi_parser parser(lsda_data);
 
-    parser.parse();
-    parser.print_call_sites();
-    parser.print_actions();
+    try 
+    {
+        parser.parse();
+        parser.print_call_sites("LSDA/lsda_output.txt"); // temporary file output
+        parser.print_actions("LSDA/lsda_output.txt"); // temporary file output
 
+    } catch (const std::exception& e) 
+    {
+        std::cerr << "parsing error: " << e.what() << "\n";
+        return 1;
+    }
     return 0;
 }
