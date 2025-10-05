@@ -7,28 +7,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(ctre REQUIRED)
-
-
-
-# Find package dependancies
-#TODO: Remove due to this being a temporary patch for libraries to work
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 find_package(libelf REQUIRED)
 
-# Create the executable target
-add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp)
+# Find package dependancies
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 
 #Linking Libraries
-target_link_libraries(${PROJECT_NAME} libelf::libelf)
-
+add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp src/gcc_parse.cpp)
 
 #Linking Libraries
-target_link_libraries(${PROJECT_NAME} libelf::libelf)
-add_executable(${PROJECT_NAME} src/main.cpp src/gcc_parse.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
-target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre)
 
 # Add compile options
 list(APPEND COMPILER_BUILD_FLAGS   
