@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <system_error>
 
 class ElfParser
 {
