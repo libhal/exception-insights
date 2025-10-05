@@ -23,7 +23,7 @@ using std::operator""sv;
 #include <string_view>
 
 #include "../include/elf_parser.hpp"
-int main(int argc, char* argv[])
+int main()
 {
     std::println("yeet: {}", __cplusplus);
     try {
