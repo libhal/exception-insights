@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <elf.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -20,10 +19,10 @@
 
 #include <print>
 #include <string_view>
+#include <system_error>
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include <system_error>
 
 class ElfParser
 {
