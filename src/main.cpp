@@ -8,6 +8,10 @@
  * @copyright Copyright (c) 2025
  *
  */
+#include "state.hpp"
+#include "state_context.hpp"
+#include "concrete_states.hpp"
+
 #include <print>
 #include <tuple>
 
@@ -16,13 +20,6 @@ int main(int argc, char** argv)
     std::ignore = argc;
     std::ignore = argv;
     std::println("Hello C++: {}", __cplusplus);
-#include "state.hpp"
-#include "state_context.hpp"
-#include "concrete_states.hpp"
-
-int main()
-{
-    std::println("yeet: {}", __cplusplus);
 
     StateMachine sm;
     
