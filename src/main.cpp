@@ -20,18 +20,15 @@ int main(int argc, char** argv)
 #include "state_context.hpp"
 #include "concrete_states.hpp"
 
-void state_init() {
-    UserInputState inital_state;
-    StateContext *context = new StateContext(&inital_state);
-    context->run_state();
-    delete context;
-}
-
 int main()
 {
     std::println("yeet: {}", __cplusplus);
 
-    state_init();
+    StateMachine sm;
+    
+    while(sm.get_current_state() != nullptr){
+        sm.run_state();
+    }
 
     return 0;
 }

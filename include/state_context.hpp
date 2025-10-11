@@ -1,17 +1,10 @@
 #pragma once
-#include "./state.hpp"
 
-class State;
-
+// class or struct idk
 class StateContext {
-    public: 
-        StateContext(State *state);
-        ~StateContext();
-        State* get_current_state();
-        void run_state();
-        void transition_state(State* new_state);
-    private: 
-        State* current_state;
-        int total_state;
+    public:
+        void inc_data() {data++;}
+        int get_data() {return data;}
+    private:
+        int data = 0;
 };
-

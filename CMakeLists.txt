@@ -12,8 +12,12 @@ find_package(libelf REQUIRED)
 # Find package dependancies
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 
-#Linking Libraries
-add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp src/gcc_parse.cpp)
+#Creating Executable Target
+add_executable(${PROJECT_NAME} src/main.cpp 
+                               src/elf_parser.cpp 
+                               src/gcc_parse.cpp
+                               src/state_machine.cpp
+                               src/concrete_states.cpp)
 
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)

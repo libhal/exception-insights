@@ -1,100 +1,122 @@
-#include "../include/concrete_state.hpp"
+#include "../include/concrete_states.hpp"
 #include "../include/state.hpp"
-#include "../include/state_context.hpp"
+#include "../include/state_machine.hpp"
 
 //User Input
-void UserInputState::enter() {
-    print("Enter User Input State\n");
+void UserInputState::enter(StateContext& context) {
+    std::print("Enter User Input State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void UserInputState::handle() {
-    print("Handle User Input State\n");
+void UserInputState::handle(StateContext& context) {
+    std::print("Handle User Input State\n");
+    context.inc_data();
 }
 
-void UserInputState::exit() {
-    print("Exit User Input State\n-------------\n");
-    this->contect->transition_state(new ElfParserState);
+State* UserInputState::exit(StateContext& context) {
+    std::print("Exit User Input State\n-------------\n");
+    (void) context;
+    return new ElfParserState;
 }
 
 //Elf Parser
-void ElfParserState::enter() {
-    print("Enter Elf Parser State\n");
+void ElfParserState::enter(StateContext& context) {
+    std::print("Enter Elf Parser State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void ElfParserState::handle() {
-    print("Handle Elf Parser State\n");
+void ElfParserState::handle(StateContext& context) {
+    std::print("Handle Elf Parser State\n");
+    context.inc_data();
 }
 
-void ElfParserState::exit() {
-    print("Exit Elf Parser State\n-------------\n");
-    this->context->transition_state(new CallgraphState);
+State* ElfParserState::exit(StateContext& context) {
+    std::print("Exit Elf Parser State\n-------------\n");
+    (void) context;
+    return new CallgraphState;
 }
 
 //Callgraph
-void CallgraphState::enter() {
-    print("Enter Callgraph State\n");
+void CallgraphState::enter(StateContext& context) {
+    std::print("Enter Callgraph State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void CallgraphState::handle() {
-    print("Handle Callgraph State\n");
+void CallgraphState::handle(StateContext& context) {
+    context.inc_data();
+    std::print("Handle Callgraph State\n");
 }
 
-void CallgraphState::exit() {
-    print("Exit Callgraph State\n-------------\n");
-    this->context->transition_state(new AbiParserState);
+State* CallgraphState::exit(StateContext& context) {
+    std::print("Exit Callgraph State\n-------------\n");
+    (void) context;
+    return new AbiParserState;
 }
 
 //Abi Parser
-void AbiParserState::enter() {
-    print("Enter ABI Parser State\n");
+void AbiParserState::enter(StateContext& context) {
+    std::print("Enter ABI Parser State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void AbiParserState::handle() {
-    print("Handle ABI Parser State\n");
+void AbiParserState::handle(StateContext& context) {
+    std::print("Handle ABI Parser State\n");
+    context.inc_data();
 }
 
-void AbiParserState::exit() {
-    print("Exit ABI Parser State\n-------------\n");
-    this->context->transition_state(new ValidatorState);
+State* AbiParserState::exit(StateContext& context) {
+    std::print("Exit ABI Parser State\n-------------\n");
+    (void) context;
+    return new ValidatorState;
 }
 
 //Validator
-void ValidatorState::enter() {
-    print("Enter Validator State\n")
+void ValidatorState::enter(StateContext& context) {
+    std::print("Enter Validator State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void ValidatorState::handle() {
-    print("Handle Validator State\n");
+void ValidatorState::handle(StateContext& context) {
+    std::print("Handle Validator State\n");
+    context.inc_data();
 }
 
-void ValidatorState::exit() {
-    print("Exit Validator State\n-------------\n");
-    this->context->transition_state(new OutputState);
+State* ValidatorState::exit(StateContext& context) {
+    std::print("Exit Validator State\n-------------\n");
+    (void) context;
+    return new OutputState;
 }
 
 //Output
-void OutputState::enter() {
-    print("Enter Output State\n");
+void OutputState::enter(StateContext& context) {
+    std::print("Enter Output State\n");
+    std::print("Previous Number: {}\n", context.get_data());
 }
 
-void OutputState::handle() {
-    print("Handle Output State\n");
+void OutputState::handle(StateContext& context) {
+    std::print("Handle Output State\n");
+    context.inc_data();
 }
 
-void OutputState::exit() {
-    print("Exit Output State\n-------------\n");
-    this->context->transition_state(new OutputState);
+State* OutputState::exit(StateContext& context) {
+    std::print("Exit Output State\n-------------\n");
+    (void) context;
+    return nullptr;
 }
 
 //Error
-void ErrorState::enter() {
-    print("Enter Error State\n")
+void ErrorState::enter(StateContext& context) {
+    std::print("Enter Error State\n");
+    (void) context;
 }
 
-void ErrorState::handle() {
-    print("Handle Error State\n");
+void ErrorState::handle(StateContext& context) {
+    std::print("Handle Error State\n");
+    (void) context;
 }
 
-void ErrorState::exit() {
-    print("Exit Error State\n-------------\n")
+State* ErrorState::exit(StateContext& context) {
+    std::print("Exit Error State\n-------------\n");
+    (void) context;
+    return nullptr;
 }

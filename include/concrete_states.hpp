@@ -4,49 +4,49 @@
 
 class UserInputState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class ElfParserState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class CallgraphState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class AbiParserState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class ValidatorState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class OutputState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
 
 class ErrorState : public State {
     public: 
-        void enter() override;
-        void handle() override;
-        void exit() override;
+        void enter(StateContext& context) override;
+        void handle(StateContext& context) override;
+        State* exit(StateContext& context) override;
 };
