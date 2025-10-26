@@ -1,0 +1,21 @@
+name: 'Build and Test SAFE'
+description: 'Compile and run unit tests'
+
+inputs:
+  conan-path:
+    description: 'Path to Conan executable'
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Conan Profile
+      shell: bash
+      run: |
+         ${{ inputs.conan-path }} remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+         ${{ inputs.conan-path }} config install -sf profiles/x86_64/linux/ -tf profiles https://github.com/libhal/conan-config.git
+    
+    - name: Build Program
+      shell: bash
+      run:  ${{ inputs.conan-path }} build . -s build_type=Release -b missing

@@ -1,0 +1,37 @@
+name: Setup Conan/LLVM/CMake on Ubuntu
+
+on: [push, workflow_dispatch]
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Show current user
+        run: whoami
+
+      - name: Install LLVM/Clang 20 via llvm.sh
+        run: |
+          sudo apt update
+          sudo apt install -y wget lsb-release python3-pip software-properties-common gnupg pipx
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt install libc++-17-dev libc++abi-17-dev -y
+
+      - name: Install pipx, Conan, and CMake
+        run: |
+          pipx install "conan>=2.2.2" cmake
+          pipx ensurepath
+
+      - name: Build
+        uses: ./.github/actions/build-and-test
+        with:
+          conan-path: conan
