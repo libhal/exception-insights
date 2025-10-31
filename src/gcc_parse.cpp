@@ -1,10 +1,14 @@
 #include "gcc_parse.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <format>
 #include <fstream>
+#include <optional>
 #include <print>
+#include <queue>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -16,67 +20,7 @@ namespace views = rng::views;
 using string = std::string;
 using std::operator""sv;
 
-struct Node
-{
-    Node(int p_nid,
-         std::string p_fn_name,
-         std::string p_demangled_name,
-         std::string p_visibility,
-         std::string p_avaliablity,
-         std::string p_flags)
-      : id(p_nid)
-      , fn_name(std::move(p_fn_name))
-      , demangled_name(std::move(p_demangled_name))
-      , visibility(std::move(p_visibility))
-      , availability(std::move(p_avaliablity))
-      , flags(std::move(p_flags)) {};
-
-    Node& operator=(Node const&) = default;
-    Node(Node const&) = default;
-    Node& operator=(Node&&) = default;
-    Node(Node&&) = default;
-    // Node() = default;
-
-    int id;
-    std::string fn_name;
-    std::string demangled_name;
-    std::string visibility;
-    std::string availability;
-    std::string flags;
-    std::vector<Node> callees;
-    std::vector<Node> callers;
-};
-
-inline auto get_names(std::span<Node> v)
-{
-    return v | views::transform([](auto& n) { return n.fn_name; })
-           | rng::to<std::vector<string>>();
-}
-
-// template<>
-// struct std::formatter<Node> : std::formatter<std::string>
-// {
-//     auto format(Node& n, format_context& ctx) const
-//     {
-//         return formatter<std::string>::format(std::format("id: {}"
-//                                                           "func_name: {}"
-//                                                           "demangled_name: {}"
-//                                                           "visibility: {}"
-//                                                           "availability: {}"
-//                                                           "flags: {}"
-//                                                           "callers: {}"
-//                                                           "callees: {}",
-//                                                           n.id,
-//                                                           n.fn_name,
-//                                                           n.demangled_name,
-//                                                           n.visibility,
-//                                                           n.availability,
-//                                                           n.flags,
-//                                                           get_names(n.callers),
-//                                                           get_names(n.callees)),
-//                                               ctx);
-//     }
-// };
+namespace {
 
 constexpr string trim(std::string_view str)
 {
@@ -95,26 +39,121 @@ constexpr bool is_whitespace(std::string_view sv)
     return rng::all_of(sv, [](char c) { return std::isspace(c); });
 }
 
-std::vector<string> parse_fn_list(std::string_view inp)
+constexpr bool is_word_in_str(std::string_view const word,
+                              std::string_view const full_str)
 {
-    auto split_vec
-      = inp | views::split(' ')
-        | views::transform([](auto&& s) { return std::string_view(s); })
-        | rng::to<std::vector<string>>();
+    constexpr auto pattern = ctll::fixed_string{ "\\n| |\\t" };
+    return rng::any_of(ctre::split<pattern>(full_str),
+                       [word](auto&& c) { return word == c; });
+}
+}  // namespace
 
-    std::vector<string> res;
+void bfs(Node* root)
+{
+    if (!root) {
+        return;
+    }
+
+    std::queue<std::pair<Node*, int>> q;  // node and depth
+    std::unordered_map<int, int>
+      visit_count;  // track how many times we've seen each node
+
+    q.emplace(root, 0);
+
+    while (!q.empty()) {
+        auto [n, depth] = q.front();
+        q.pop();
+
+        // Limit visits to prevent infinite loops in cyclic graphs
+        if (visit_count[n->id] >= 10) {
+            continue;
+        }
+        visit_count[n->id]++;
+
+        // Print current node
+        std::string indent(static_cast<size_t>(depth) * 2, ' ');
+        std::println(
+          "{}[{}] {} ({})", indent, n->id, n->fn_name, n->demangled_name);
+
+        // Enqueue all callees
+        for (auto& [callee, attrs] : n->callees) {
+            if (!attrs.empty()) {
+                std::println("{}  with attributes: {}", indent, attrs);
+            }
+            // `callee` is an id (usize). Enqueue the address of the
+            // corresponding Node instance.
+            q.emplace(&Node::get_node_from_id(callee), depth + 1);
+        }
+    }
+}
+
+std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
+  std::string& inp)
+{
+    std::vector<string> split_vec;
+    bool is_attr_str = false;
+
+    string buf = "";
+    for (size_t pos = 0; pos < inp.length(); pos++) {
+        const auto c = inp[pos];
+        if (buf.empty() && c == ' ') {
+            continue;
+        }
+        if (c == '(' && !is_attr_str && buf.empty()) {
+            buf.push_back(c);
+            is_attr_str = true;
+            continue;
+        }
+
+        if ((c == ')' && is_attr_str) || (!is_attr_str && c == ' ')) {
+            if (c != ' ') {
+                buf.push_back(c);
+            }
+
+            split_vec.push_back(buf);
+            buf = "";
+            is_attr_str = false;
+            continue;
+        }
+
+        if (is_attr_str || c != ' ') {
+            buf.push_back(c);
+        }
+    }
+
+    if (!buf.empty()) {
+        split_vec.push_back(buf);
+    }
+
+    std::vector<std::pair<string, std::vector<string>>> res;
+    std::pair<string, std::vector<string>>* prev = nullptr;
     for (string& s : split_vec) {
+        if (ctre::match<"(\\(.+\\))+">(s)) {
+            if (s.empty()) {
+                continue;
+            }
+
+            if (!prev) {
+                throw std::invalid_argument("Invalid format given");
+            }
+            prev->second.emplace_back(s.data() + 1, s.length() - 2);
+            continue;
+        }
+
         string name = *(s | views::split('/') | views::take(1)
                         | views::transform(
                           [](auto&& ss) { return trim(std::string_view(ss)); }))
                          .begin();
 
-        res.push_back(name);
+        std::pair<string, std::vector<string>> p(name, {});
+        res.push_back(p);
+        prev = &res.back();
     }
+
     return res;
 }
 
-void parse(string file_path)
+void parse(std::string_view file_path)
 {
     std::ifstream file;
     file.open(file_path);
@@ -168,19 +207,10 @@ void parse(string file_path)
     }
 
     file.close();
-    // for (auto& e : raw_entries) {
-    //     std::println("Entry:");
-    //     for (auto&& s :
-    //          e | views::split('\n') | rng::to<std::vector<string>>()) {
-    //         std::println("{}", s);
-    //     }
-    //     std::println("\n");
-    // }
 
     std::vector<std::unordered_map<string, string>> table_entries;
     auto fn_name_re = ctre::search<".+[0-9]+">;
     for (auto& raw_entry : raw_entries) {
-        std::println("\nNEW ENTRY\n");
         if (raw_entry.length() == 0 || is_whitespace(raw_entry)) {
             continue;
         }
@@ -198,6 +228,7 @@ void parse(string file_path)
         if (!rng::search(first_line, "__gxx_personality"sv).empty()) {
             continue;
         }
+        std::println("\nNEW ENTRY\n");
         // TODO: Use rng::enumerate when clang is updated
         for (size_t i = 0; i < split_vec.size(); i++) {
             auto& entry = split_vec[i];
@@ -219,7 +250,6 @@ void parse(string file_path)
                     | views::drop(1) | views::reverse | views::drop(1)
                     | views::reverse;
 
-                // *sigh* C++ needs a collect method
                 parsed_entry["demangled_name"] = string(
                   demangle_name_iter.begin(), demangle_name_iter.end());
 
@@ -254,29 +284,55 @@ void parse(string file_path)
     }
 
     // Create all nodes
-    std::unordered_map<std::string_view, Node> all_nodes;
+    auto& all_nodes = Node::all_nodes;
     for (auto& entry : table_entries) {
-        Node n = { std::stoi(entry["id"]),  entry["fn_name"],
+        // Convert string id to numeric key before emplacing.
+        usize uid = static_cast<usize>(std::stoul(entry["id"]));
+        Node n = { static_cast<int>(uid),   entry["fn_name"],
                    entry["demangled_name"], entry["visablity"],
                    entry["avaliablity"],    entry["function_flags"] };
-        all_nodes.emplace(entry["fn_name"], n);
+        all_nodes.emplace(uid, std::move(n));
     }
 
     // Create Edges
     for (auto& entry : table_entries) {
-        std::string_view name = entry["fn_name"];
-        if (!all_nodes.contains(name)) {
+        usize id = std::stoi(entry["id"]);
+        if (entry["demangled_name"] == "bar") {
+            std::println("Breakpoint");
+        }
+        if (!all_nodes.contains(id)) {
             continue;
         }
-        auto caller_strs = parse_fn_list(entry["called_by"]);
-        auto callee_strs = parse_fn_list(entry["calls"]);
+        auto caller_pairs = parse_fn_list(entry["called_by"]);
+        auto callee_pairs = parse_fn_list(entry["calls"]);
 
-        auto get_node = [&all_nodes](std::string_view name) -> Node& {
-            return all_nodes.at(name);
-        };
+        Node& n = all_nodes.at(id);
 
-        Node& n = get_node(name);
-        n.callers = caller_strs | views::transform(get_node)
-                    | rng::to<std::vector<Node>>();
+        // Callers
+        for (const auto& [node_name, attribs] : caller_pairs) {
+            auto& nn = Node::get_node_from_name(node_name).value().get();
+            n.callers.emplace_back(nn.id, attribs);
+        }
+
+        for (const auto& [node_name, attribs] : callee_pairs) {
+            auto& nn = Node::get_node_from_name(node_name).value().get();
+            n.callees.emplace_back(nn.id, attribs);
+        }
     }
+
+    // Print all nodes
+    std::println("Nodes:\n");
+    Node& main = Node::get_node_from_name("main").value().get();
+    // for (auto const& pair : all_nodes) {
+
+    //     if (pair.first == "main") {
+    //         main = const_cast<Node*>(&pair.second);
+    //     }
+
+    //     std::println("{}: {{", pair.first);
+    //     auto const& n = pair.second;
+    //     std::println("{}\n}}", n);
+    // }
+
+    bfs(&main);
 }

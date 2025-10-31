@@ -6,16 +6,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # Ensure only standard C++ features
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(ctre REQUIRED)
-find_package(libelf REQUIRED)
-
 # Find package dependancies
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 
-#Linking Libraries
-add_executable(${PROJECT_NAME} src/main.cpp 
-                               src/elf_parser.cpp 
-                               src/gcc_parse.cpp
+find_package(ctre REQUIRED)
+find_package(libelf REQUIRED)
+
+# Create the executable target
+add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp src/gcc_parse.cpp
                                src/abi_parse.cpp)
 
 #Linking Libraries
