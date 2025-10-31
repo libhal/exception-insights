@@ -11,10 +11,14 @@
 #include <print>
 #include <tuple>
 
+#include "gcc_parse.hpp"
+
 int main(int argc, char** argv)
 {
     std::ignore = argc;
     std::ignore = argv;
     std::println("Hello C++: {}", __cplusplus);
+
+    parse("testing_programs/build/demo_class.wpa.081i.whole-program");
     return 0;
 }
