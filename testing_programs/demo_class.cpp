@@ -1,8 +1,10 @@
+#include "demo_two.h"
 struct A
 {
     int a = 2;
     int method()
     {
+        throw "string";
         return a;
     }
 };
@@ -14,16 +16,20 @@ void bar()
 
 void foo()
 {
+    auto f = [] {};
+    f();
     bar();
 }
 
 int main()
 {
     A a;
-    a.method();
+    baz(2);
     try {
+        a.method();
         foo();
     } catch (...) {
+        return 1;
     }
     return 0;
 }

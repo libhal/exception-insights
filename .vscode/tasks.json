@@ -1,0 +1,55 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Conan Build Debug",
+            "type": "shell",
+            "command": "conan",
+            "args": [
+                "build",
+                ".",
+                "-b",
+                "missing",
+                "-s",
+                "build_type=Debug"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": false,
+                "clear": true
+            },
+            "detail": "Runs Conan build in Debug"
+        },
+        {
+            "label": "Conan Build Release",
+            "type": "shell",
+            "command": "conan",
+            "args": [
+                "build",
+                ".",
+                "-b",
+                "missing",
+                "-s",
+                "build_type=Release"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": false,
+                "clear": true
+            },
+            "detail": "Runs Conan build in Release"
+        }
+    ]
+}

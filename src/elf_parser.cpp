@@ -10,6 +10,7 @@
  **/
 
 #include "../include/elf_parser.hpp"
+#include <iostream>
 
 ElfParser::ElfParser(std::string_view p_file_name)
   : m_file_name(p_file_name)
@@ -51,7 +52,7 @@ ElfParser::ElfParser(std::string_view p_file_name)
     std::println("{} {}-bit ELF object\n",
                  m_file_name,
                  m_elf_class == ELFCLASS32 ? 32 : 64);
-                 
+
     m_load_elf_header();
     m_load_section_header();
     m_load_program_header();
@@ -88,8 +89,8 @@ void ElfParser::m_load_section_header()
     Elf_Scn* section = nullptr;
     GElf_Shdr current_section_header;
     while ((section = elf_nextscn(m_elf, section)) != NULL) {
-        if (gelf_getshdr(section, &current_section_header) !=
-            &current_section_header) {
+        if (gelf_getshdr(section, &current_section_header)
+            != &current_section_header) {
             std::println(
               stderr,
               "Error (load_section_header): Unable to get section header: {}.",
@@ -97,10 +98,9 @@ void ElfParser::m_load_section_header()
             continue;
         }
 
-        if ((section_name = elf_strptr(m_elf,
-                                       m_elf_header.e_shstrndx,
-                                       current_section_header.sh_name)) ==
-            NULL) {
+        if ((section_name = elf_strptr(
+               m_elf, m_elf_header.e_shstrndx, current_section_header.sh_name))
+            == NULL) {
             std::println(
               stderr,
               "Error (load_section_header): Unable to get section name: {}.",
@@ -125,8 +125,8 @@ void ElfParser::m_load_section_header()
         } else {
             std::vector<std::byte> parsed_data(
               reinterpret_cast<const std::byte*>(section_data->d_buf),
-              reinterpret_cast<const std::byte*>(section_data->d_buf) +
-                section_data->d_size);
+              reinterpret_cast<const std::byte*>(section_data->d_buf)
+                + section_data->d_size);
             m_section_data.emplace(section_name, parsed_data);
         }
     }
@@ -143,8 +143,8 @@ void ElfParser::m_load_program_header()
     } else {
         GElf_Phdr current_program_header;
         for (int i = 0; i < m_elf_header.e_phnum; i++) {
-            if (gelf_getphdr(m_elf, i, &current_program_header) !=
-                &current_program_header) {
+            if (gelf_getphdr(m_elf, i, &current_program_header)
+                != &current_program_header) {
                 std::println(
                   stderr,
                   "Error (Load_program_header): Unable to get program "
