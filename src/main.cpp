@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     std::ignore = argv;
     std::println("Hello C++: {}", __cplusplus);
 
-    parse("testing_programs/build/demo_class.wpa.081i.whole-program");
+    safe::parse_gcc_wpa(
+      "testing_programs/build/demo_class.wpa.081i.whole-program");
     return 0;
 }
