@@ -1,69 +1,66 @@
 #pragma once
 #include <cctype>
 #include <cstddef>
-#include <ctll/fixed_string.hpp>
-#include <ctre.hpp>
-#include <ctre/wrapper.hpp>
 #include <format>
+#include <optional>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-namespace rng = std::ranges;
-namespace views = rng::views;
+#include <ctll/fixed_string.hpp>
+#include <ctre.hpp>
+#include <ctre/wrapper.hpp>
 
-using string = std::string;
-using std::operator""sv;
-using usize = size_t;
+namespace safe {
 
-void parse(std::string_view file_path);
-struct Node
+/**
+ * @brief A node representing an entry within a program's callgraph. Used
+ * primarily as a data class with publically accessible member variables.
+ * Should be used to build an N-tree when building a callgraph. Currently, class
+ * is tailored for GCC callgraph dumped artifacts, subject to change.
+ */
+struct CallGraphNode
 {
-    Node(int p_nid,
-         std::string p_fn_name,
-         std::string p_demangled_name,
-         std::string p_visibility,
-         std::string p_avaliablity,
-         std::string p_flags)
-      : id(p_nid)
-      , fn_name(std::move(p_fn_name))
-      , demangled_name(std::move(p_demangled_name))
-      , visibility(std::move(p_visibility))
-      , availability(std::move(p_avaliablity))
-      , flags(std::move(p_flags)){};
 
-    Node& operator=(Node const&) = default;
-    Node(Node const&) = default;
-    Node& operator=(Node&&) = default;
-    Node(Node&&) = default;
+    friend CallGraphNode parse_gcc_wpa(std::string_view file_path);
 
-    int id;
-    std::string fn_name;
-    std::string demangled_name;
-    std::string visibility;
-    std::string availability;
-    std::string flags;
-    std::vector<std::pair<usize, std::vector<string>>> callees;
-    std::vector<std::pair<usize, std::vector<string>>> callers;
-
-    friend void parse(std::string_view file_path);
-
-    // Return a reference to the node with the given id. Use `.at` so we do
-    // not implicitly default-construct a Node when the id is missing.
-    // Note: this throws std::out_of_range if id is not present.
-    static Node& get_node_from_id(usize id)
+    /**
+     * @brief Get a node from a given function ID dictated by the compiler. Node
+     * is acquired from internal hashmap storing all nodes in existance
+     *
+     * @param p_id The function ID
+     *
+     * @returns An optional reference to the node if found or nullopt if not
+     * found.
+     */
+    static std::optional<std::reference_wrapper<CallGraphNode>>
+    get_node_from_id(size_t p_id)
     {
-        return all_nodes.at(id);
+        try {
+            return std::ref(all_nodes.at(p_id));
+        } catch (std::out_of_range) {
+            return std::nullopt;
+        }
     }
 
-    // TODO: Make more efficent
-    static std::optional<std::reference_wrapper<Node>> get_node_from_name(
-      std::string_view name)
+    /**
+     * @brief Get a node from a function's name.
+     * NOTE: Expects the original functions name, not the demangled name.
+     *
+     * @param p_name - The unmodified, mangled name of the function to look up.
+     *
+     * @return An optional reference to the node if found or nullopt if not
+     * found.
+     */
+    static std::optional<std::reference_wrapper<CallGraphNode>>
+    get_node_from_name(std::string_view p_name)
     {
-        for (auto [id, n] : all_nodes) {
-            if (name == n.fn_name) {
+        // TODO: Make more efficent
+        for (auto& [id, n] : all_nodes) {
+            if (p_name == n.fn_name) {
                 return std::ref(n);
             }
         }
@@ -71,24 +68,76 @@ struct Node
         return std::nullopt;
     }
 
+    CallGraphNode(int p_nid,
+                  std::string p_fn_name,
+                  std::string p_demangled_name,
+                  std::string p_visibility,
+                  std::string p_avaliablity,
+                  std::string p_flags)
+      : id(p_nid)
+      , fn_name(std::move(p_fn_name))
+      , demangled_name(std::move(p_demangled_name))
+      , visibility(std::move(p_visibility))
+      , availability(std::move(p_avaliablity))
+      , flags(std::move(p_flags)){};
+
+    CallGraphNode& operator=(CallGraphNode const&) = default;
+    CallGraphNode(CallGraphNode const&) = default;
+    CallGraphNode& operator=(CallGraphNode&&) = default;
+    CallGraphNode(CallGraphNode&&) = default;
+
+    int id;
+    std::string fn_name;
+    std::string demangled_name;
+    std::string visibility;
+    std::string availability;
+    std::string flags;
+    std::vector<std::pair<size_t, std::vector<std::string>>> callees;
+    std::vector<std::pair<size_t, std::vector<std::string>>> callers;
+
   private:
-    static inline std::unordered_map<usize, Node> all_nodes;
+    // TODO: Maybe a multi-key hash-map where lookup can be done either with a
+    // name or an ID.
+    static inline std::unordered_map<size_t, CallGraphNode> all_nodes;
 };
 
-constexpr inline auto get_names(
-  std::span<const std::pair<usize, std::vector<string>>> v)
-{
-    return v | views::transform([](const auto& p) {
-               return std::format(
-                 "{}: {}", Node::get_node_from_id(p.first).fn_name, p.second);
-           })
-           | rng::to<std::vector<string>>();
-}
+/**
+ * @brief Parses a GCC generated whole-program file generated by the
+ * `-fdump-ipa-whole-program flag.` For a cross translation unit file (wpa
+ * instead of cpp), -flto must also be enabled.
+ *
+ * @param file_path The string of the file path. Can be relative to the binary
+ * or an absolute path.
+ *
+ */
+CallGraphNode parse_gcc_wpa(std::string_view file_path);
+
+}  // namespace safe
 
 template<>
-struct std::formatter<Node> : std::formatter<std::string>
+struct std::formatter<safe::CallGraphNode> : std::formatter<std::string>
 {
-    auto format(const Node& n, format_context& ctx) const
+  private:
+    constexpr static auto get_names(
+      std::span<const std::pair<size_t, std::vector<std::string>>> v)
+    {
+        namespace rng = std::ranges;
+        namespace views = rng::views;
+
+        return v | views::transform([](const auto& p) {
+                   return std::format(
+                     "{}: {}",
+                     safe::CallGraphNode::get_node_from_id(p.first)
+                       .value()
+                       .get()
+                       .fn_name,
+                     p.second);
+               })
+               | rng::to<std::vector<std::string>>();
+    }
+
+  public:
+    inline auto format(const safe::CallGraphNode& n, format_context& ctx) const
     {
         return formatter<std::string>::format(std::format("id: {}\n"
                                                           "func_name: {}\n"
