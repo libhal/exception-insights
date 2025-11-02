@@ -1,4 +1,3 @@
-#include "gcc_parse.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
@@ -14,13 +13,14 @@
 #include <unordered_map>
 #include <vector>
 
-namespace rng = std::ranges;
-namespace views = rng::views;
+#include "gcc_parse.hpp"
 
+namespace safe {
+namespace {
 using string = std::string;
 using std::operator""sv;
-
-namespace {
+namespace rng = std::ranges;
+namespace views = rng::views;
 
 constexpr string trim(std::string_view str)
 {
@@ -45,46 +45,6 @@ constexpr bool is_word_in_str(std::string_view const word,
     constexpr auto pattern = ctll::fixed_string{ "\\n| |\\t" };
     return rng::any_of(ctre::split<pattern>(full_str),
                        [word](auto&& c) { return word == c; });
-}
-}  // namespace
-
-void bfs(Node* root)
-{
-    if (!root) {
-        return;
-    }
-
-    std::queue<std::pair<Node*, int>> q;  // node and depth
-    std::unordered_map<int, int>
-      visit_count;  // track how many times we've seen each node
-
-    q.emplace(root, 0);
-
-    while (!q.empty()) {
-        auto [n, depth] = q.front();
-        q.pop();
-
-        // Limit visits to prevent infinite loops in cyclic graphs
-        if (visit_count[n->id] >= 10) {
-            continue;
-        }
-        visit_count[n->id]++;
-
-        // Print current node
-        std::string indent(static_cast<size_t>(depth) * 2, ' ');
-        std::println(
-          "{}[{}] {} ({})", indent, n->id, n->fn_name, n->demangled_name);
-
-        // Enqueue all callees
-        for (auto& [callee, attrs] : n->callees) {
-            if (!attrs.empty()) {
-                std::println("{}  with attributes: {}", indent, attrs);
-            }
-            // `callee` is an id (usize). Enqueue the address of the
-            // corresponding Node instance.
-            q.emplace(&Node::get_node_from_id(callee), depth + 1);
-        }
-    }
 }
 
 std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
@@ -152,8 +112,49 @@ std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
 
     return res;
 }
+}  // namespace
 
-void parse(std::string_view file_path)
+void bfs(CallGraphNode* root)
+{
+    if (!root) {
+        return;
+    }
+
+    std::queue<std::pair<CallGraphNode*, int>> q;  // node and depth
+    std::unordered_map<int, int>
+      visit_count;  // track how many times we've seen each node
+
+    q.emplace(root, 0);
+
+    while (!q.empty()) {
+        auto [n, depth] = q.front();
+        q.pop();
+
+        // Limit visits to prevent infinite loops in cyclic graphs
+        if (visit_count[n->id] >= 10) {
+            continue;
+        }
+        visit_count[n->id]++;
+
+        // Print current node
+        std::string indent(static_cast<size_t>(depth) * 2, ' ');
+        std::println(
+          "{}[{}] {} ({})", indent, n->id, n->fn_name, n->demangled_name);
+
+        // Enqueue all callees
+        for (auto& [callee, attrs] : n->callees) {
+            if (!attrs.empty()) {
+                std::println("{}  with attributes: {}", indent, attrs);
+            }
+            // `callee` is an id (size_t). Enqueue the address of the
+            // corresponding Node instance.
+            q.emplace(&CallGraphNode::get_node_from_id(callee).value().get(),
+                      depth + 1);
+        }
+    }
+}
+
+CallGraphNode parse_gcc_wpa(std::string_view file_path)
 {
     std::ifstream file;
     file.open(file_path);
@@ -284,19 +285,19 @@ void parse(std::string_view file_path)
     }
 
     // Create all nodes
-    auto& all_nodes = Node::all_nodes;
+    auto& all_nodes = CallGraphNode::all_nodes;
     for (auto& entry : table_entries) {
         // Convert string id to numeric key before emplacing.
-        usize uid = static_cast<usize>(std::stoul(entry["id"]));
-        Node n = { static_cast<int>(uid),   entry["fn_name"],
-                   entry["demangled_name"], entry["visablity"],
-                   entry["avaliablity"],    entry["function_flags"] };
+        size_t uid = static_cast<size_t>(std::stoul(entry["id"]));
+        CallGraphNode n = { static_cast<int>(uid),   entry["fn_name"],
+                            entry["demangled_name"], entry["visablity"],
+                            entry["avaliablity"],    entry["function_flags"] };
         all_nodes.emplace(uid, std::move(n));
     }
 
     // Create Edges
     for (auto& entry : table_entries) {
-        usize id = std::stoi(entry["id"]);
+        size_t id = std::stoi(entry["id"]);
         if (entry["demangled_name"] == "bar") {
             std::println("Breakpoint");
         }
@@ -306,33 +307,28 @@ void parse(std::string_view file_path)
         auto caller_pairs = parse_fn_list(entry["called_by"]);
         auto callee_pairs = parse_fn_list(entry["calls"]);
 
-        Node& n = all_nodes.at(id);
+        CallGraphNode& n = all_nodes.at(id);
 
         // Callers
         for (const auto& [node_name, attribs] : caller_pairs) {
-            auto& nn = Node::get_node_from_name(node_name).value().get();
+            auto& nn
+              = CallGraphNode::get_node_from_name(node_name).value().get();
             n.callers.emplace_back(nn.id, attribs);
         }
 
         for (const auto& [node_name, attribs] : callee_pairs) {
-            auto& nn = Node::get_node_from_name(node_name).value().get();
+            auto& nn
+              = CallGraphNode::get_node_from_name(node_name).value().get();
             n.callees.emplace_back(nn.id, attribs);
         }
     }
 
-    // Print all nodes
     std::println("Nodes:\n");
-    Node& main = Node::get_node_from_name("main").value().get();
-    // for (auto const& pair : all_nodes) {
+    CallGraphNode& main
+      = CallGraphNode::get_node_from_name("main").value().get();
 
-    //     if (pair.first == "main") {
-    //         main = const_cast<Node*>(&pair.second);
-    //     }
-
-    //     std::println("{}: {{", pair.first);
-    //     auto const& n = pair.second;
-    //     std::println("{}\n}}", n);
-    // }
-
-    bfs(&main);
+    // Show BFS
+    return main;
 }
+
+}  // namespace safe
