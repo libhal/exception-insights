@@ -22,10 +22,7 @@ int main(int argc, char** argv)
     std::println("Hello C++: {}", __cplusplus);
 
     StateMachine sm;
-    
-    while(sm.get_current_state() != nullptr){
-        sm.run_state();
-    }
+    sm.run_state();
 
     return 0;
 }

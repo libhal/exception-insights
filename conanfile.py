@@ -49,7 +49,7 @@ class safe_conan(ConanFile):
     """
     def layout(self):
         cmake_layout(self)
-    
+
     """
     Method to build the project
     """

@@ -5,23 +5,30 @@
 #include <print>
 
 StateMachine::StateMachine(){
-    current_state = new UserInputState;
+    current_state = std::make_unique<UserInputState>();
 }
 
-StateMachine::~StateMachine() {
-    delete current_state;
+StateMachine::~StateMachine() = default;
+
+std::optional<std::reference_wrapper<State>> StateMachine::get_current_state(){
+    if(current_state){
+        return std::ref(**current_state);
+    }
+    return std::nullopt;
 }
 
-State * StateMachine::get_current_state(){
-    return current_state;
+StateContext StateMachine::get_context(){
+    return context;
 }
 
 void StateMachine::run_state() {
-    current_state->enter(context);
-    current_state->handle(context);
-    transition_state (current_state->exit(context));
+    while(current_state != std::nullopt){
+        current_state.value()->enter(context);
+        current_state.value()->handle(context);
+        transition_state (current_state.value()->exit(context));
+    }
 }
 
-void StateMachine::transition_state(State* new_state) {
-    this->current_state = new_state;
+void StateMachine::transition_state(std::optional<std::unique_ptr<State>> new_state) {
+    this->current_state = std::move(new_state);
 }

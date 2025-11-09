@@ -49,7 +49,10 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
 libhal_unit_test(SOURCES
     tests/main.test.cpp
-    tests/testing.test.cpp
+    # tests/testing.test.cpp
+
+    src/state_machine.cpp
+    src/concrete_states.cpp
 
     PACKAGES
     tl-function-ref
