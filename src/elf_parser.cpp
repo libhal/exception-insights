@@ -7,9 +7,61 @@
  *
  * @copyright Copyright (c) 2025
  *
- */
+ **/
 
 #include "../include/elf_parser.hpp"
+
+ElfParser::ElfParser(std::string_view p_file_name)
+  : m_file_name(p_file_name)
+{
+    try {
+        if (elf_version(EV_CURRENT) == EV_NONE) {
+            throw std::runtime_error(
+              "ELF library initialization failed. Wrong ELF format version.");
+        }
+    } catch (const std::runtime_error& e) {
+        std::println(stderr, "Error opening {}: {}", m_file_name, e.what());
+        exit(EXIT_FAILURE);
+    }
+
+    m_file = open(m_file_name.c_str(), O_RDONLY, 0);
+    try {
+        if (m_file < 0) {
+            throw std::system_error(
+              errno, std::generic_category(), "Open failed.");
+        }
+    } catch (const std::system_error& e) {
+        std::println(stderr, "Error opening {}: {}", m_file_name, e.what());
+        exit(EXIT_FAILURE);
+    }
+
+    m_elf = elf_begin(m_file, ELF_C_READ, NULL);
+    try {
+        if (m_elf == NULL) {
+            throw std::runtime_error("ELF_begin failed.");
+        }
+        if (elf_kind(m_elf) != ELF_K_ELF) {
+            throw std::runtime_error("Not a ELF object.");
+        }
+    } catch (const std::runtime_error& e) {
+        std::println(stderr, "Error opening {}: {}", m_file_name, e.what());
+        exit(EXIT_FAILURE);
+    }
+
+    std::println("{} {}-bit ELF object\n",
+                 m_file_name,
+                 m_elf_class == ELFCLASS32 ? 32 : 64);
+                 
+    m_load_elf_header();
+    m_load_section_header();
+    m_load_program_header();
+};
+
+ElfParser::~ElfParser()
+{
+    close(m_file);
+    std::println("ELF file closed.");
+}
 
 void ElfParser::m_load_elf_header()
 {
@@ -184,46 +236,55 @@ void ElfParser::print_program_header()
 std::variant<uint32_t, uint64_t> ElfParser::get_section_addr(
   std::string_view p_section)
 {
-    if (!m_section_header.count(p_section)) {
+    std::variant<uint32_t, u_int64_t> section_addr;
+    try {
+        section_addr = m_section_header.at(p_section).sh_addr;
+    } catch (const std::out_of_range& e) {
         std::println(stderr,
-                     "Error (get_section_addr): Section Does Not Exist: {}",
+                     "Error (get_section_addr) {}: Section Does Not Exist: {}",
+                     e.what(),
                      p_section);
     }
-
-    return m_section_header[p_section].sh_addr;
+    return section_addr;
 }
 
 std::variant<uint32_t, uint64_t> ElfParser::get_section_offset(
   std::string_view p_section)
 {
-    if (!m_section_header.count(p_section)) {
+    std::variant<uint32_t, u_int64_t> section_offset;
+    try {
+        section_offset = m_section_header.at(p_section).sh_offset;
+    } catch (const std::out_of_range& e) {
         std::println(stderr,
-                     " Error (get_section_offset): Section Does Not Exist: {}",
-                     p_section);
+                     "Error (get_section_offset): Section Does Not Exist: {}",
+                     e.what());
     }
-
-    return m_section_header[p_section].sh_offset;
+    return section_offset;
 }
 
 std::variant<uint32_t, uint64_t> ElfParser::get_section_size(
   std::string_view p_section)
 {
-    if (!m_section_header.count(p_section)) {
+    std::variant<uint32_t, u_int64_t> section_size;
+    try {
+        section_size = m_section_header.at(p_section).sh_size;
+    } catch (const std::out_of_range& e) {
         std::println(stderr,
                      "Error (get_section_size): Section Does Not Exist: {}",
-                     p_section);
+                     e.what());
     }
-    return m_section_header[p_section].sh_size;
+    return section_size;
 }
 
 std::vector<std::byte> ElfParser::get_section_data(std::string_view p_section)
 {
-    if (!m_section_header.count(p_section)) {
+    std::vector<std::byte> section_data;
+    try {
+        section_data = m_section_data.at(p_section);
+    } catch (const std::out_of_range& e) {
         std::println(stderr,
                      "Error (get_section_data): Section Does Not Exist: {}",
-                     p_section);
-    } else {
-        std::println("{} found.", p_section);
+                     e.what());
     }
-    return m_section_data[p_section];
+    return section_data;
 }
