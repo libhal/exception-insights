@@ -1,34 +1,35 @@
-#include "../include/state.hpp"
-#include "../include/concrete_states.hpp"
-#include "../include/state_machine.hpp"
+#include "state_machine.hpp"
+#include "concrete_states.hpp"
 
-#include <print>
-
-StateMachine::StateMachine(){
-    current_state = std::make_unique<UserInputState>();
+StateMachine::StateMachine()
+{
+    m_current_state = std::make_unique<UserInputState>();
 }
 
-StateMachine::~StateMachine() = default;
-
-std::optional<std::reference_wrapper<State>> StateMachine::get_current_state(){
-    if(current_state){
-        return std::ref(**current_state);
+std::optional<std::reference_wrapper<State>> StateMachine::get_current_state()
+{
+    if (m_current_state) {
+        return std::ref(**m_current_state);
     }
     return std::nullopt;
 }
 
-StateContext StateMachine::get_context(){
-    return context;
+StateContext& StateMachine::get_context()
+{
+    return m_context;
 }
 
-void StateMachine::run_state() {
-    while(current_state != std::nullopt){
-        current_state.value()->enter(context);
-        current_state.value()->handle(context);
-        transition_state (current_state.value()->exit(context));
+void StateMachine::run_state()
+{
+    while (m_current_state != std::nullopt) {
+        m_current_state.value()->enter(m_context);
+        m_current_state.value()->handle(m_context);
+        transition_state(m_current_state.value()->exit(m_context));
     }
 }
 
-void StateMachine::transition_state(std::optional<std::unique_ptr<State>> new_state) {
-    this->current_state = std::move(new_state);
+void StateMachine::transition_state(
+  std::optional<std::unique_ptr<State>> new_state)
+{
+    this->m_current_state = std::move(new_state);
 }
