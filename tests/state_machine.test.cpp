@@ -102,7 +102,7 @@ void state_machine_tests()
                 actual_state = sm.get_current_state();
                 State& actual_state_ref = actual_state.value().get();
                 expect(typeid(actual_state_ref) == expect_state)
-                  << "State should transition to MockState";
+                  << "State should transition to " << expect_state.name();
                 actual_state_ref.enter(context);
                 actual_state_ref.handle(context);
                 sm.transition_state(actual_state_ref.exit(context));
