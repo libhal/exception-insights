@@ -1,7 +1,6 @@
 from conan import ConanFile
 from conan.errors import ConanException
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import copy
 from conan.tools.build import check_min_cppstd
 import os
@@ -29,6 +28,7 @@ class safe_conan(ConanFile):
     """
     def requirements(self):
         self.requires("libelf/0.8.13")
+
         self.requires("tl-function-ref/1.0.0")
         self.requires("ctre/[^3.9.0]")
 
@@ -41,8 +41,8 @@ class safe_conan(ConanFile):
     """
     def build_requirements(self):
         self.tool_requires("cmake/[^3.27.1]")
-        self.test_requires("boost-ext-ut/2.1.0")
         self.tool_requires("libhal-cmake-util/[^4.0.5]")
+        self.test_requires("boost-ext-ut/2.1.0")
 
     """
     Manages the layout of where build artifacts will go.

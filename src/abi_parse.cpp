@@ -1,4 +1,15 @@
-#include "abiparse.hpp"
+/**
+ * @file abi_parser.cpp
+ * @author Kenny Tran
+ * @brief ABI parser implementation file
+ * @version 0.1
+ * @date 2025-09-11
+ *
+ * @copyright Copyright (c) 2025
+ *
+ **/
+
+#include "abi_parse.hpp"
 #include <iostream>
 #include <iomanip>
 #include <fstream>

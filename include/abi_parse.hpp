@@ -1,3 +1,14 @@
+/**
+ * @file abi_parser.hpp
+ * @author Kenny Tran
+ * @brief ABI parser header file
+ * @version 0.1
+ * @date 2025-09-11
+ *
+ * @copyright Copyright (c) 2025
+ *
+ */
+
 #pragma once
 #include <cstdint>
 #include <vector>
