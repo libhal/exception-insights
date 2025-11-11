@@ -23,6 +23,16 @@
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "preLaunchTask": "Conan Build Debug"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Unit test",
+            "program": "${workspaceFolder}/build/Debug/unit_test",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "Conan Build Debug"
         }
     ]
 }
