@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cctype>
 #include <cstddef>
 #include <format>
@@ -24,8 +25,6 @@ namespace safe {
  */
 struct CallGraphNode
 {
-
-    friend CallGraphNode parse_gcc_wpa(std::string_view file_path);
 
     /**
      * @brief Get a node from a given function ID dictated by the compiler. Node
@@ -68,7 +67,7 @@ struct CallGraphNode
         return std::nullopt;
     }
 
-    CallGraphNode(int p_nid,
+    CallGraphNode(size_t p_nid,
                   std::string p_fn_name,
                   std::string p_demangled_name,
                   std::string p_visibility,
@@ -86,16 +85,18 @@ struct CallGraphNode
     CallGraphNode& operator=(CallGraphNode&&) = default;
     CallGraphNode(CallGraphNode&&) = default;
 
-    int id;
+    // TODO: alias
+    size_t id;
     std::string fn_name;
     std::string demangled_name;
     std::string visibility;
     std::string availability;
     std::string flags;
+
+    // TODO: Helper function to fetch vector of nodes
     std::vector<std::pair<size_t, std::vector<std::string>>> callees;
     std::vector<std::pair<size_t, std::vector<std::string>>> callers;
 
-  private:
     // TODO: Maybe a multi-key hash-map where lookup can be done either with a
     // name or an ID.
     static inline std::unordered_map<size_t, CallGraphNode> all_nodes;
@@ -114,47 +115,49 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path);
 
 }  // namespace safe
 
-template<>
-struct std::formatter<safe::CallGraphNode> : std::formatter<std::string>
-{
-  private:
-    constexpr static auto get_names(
-      std::span<const std::pair<size_t, std::vector<std::string>>> v)
-    {
-        namespace rng = std::ranges;
-        namespace views = rng::views;
+// template<>
+// struct std::formatter<safe::CallGraphNode> : std::formatter<std::string>
+// {
+//   private:
+//     constexpr static auto get_names(
+//       std::span<const std::pair<size_t, std::vector<std::string>>> v)
+//     {
+//         namespace rng = std::ranges;
+//         namespace views = rng::views;
 
-        return v | views::transform([](const auto& p) {
-                   return std::format(
-                     "{}: {}",
-                     safe::CallGraphNode::get_node_from_id(p.first)
-                       .value()
-                       .get()
-                       .fn_name,
-                     p.second);
-               })
-               | rng::to<std::vector<std::string>>();
-    }
+//         return v | views::transform([](const auto& p) {
+//                    return std::format(
+//                      "{}: {}",
+//                      safe::CallGraphNode::get_node_from_id(p.first)
+//                        .value()
+//                        .get()
+//                        .fn_name,
+//                      p.second);
+//                })
+//                | rng::to<std::vector<std::string>>();
+//     }
 
-  public:
-    inline auto format(const safe::CallGraphNode& n, format_context& ctx) const
-    {
-        return formatter<std::string>::format(std::format("id: {}\n"
-                                                          "func_name: {}\n"
-                                                          "demangled_name: {}\n"
-                                                          "visibility: {}\n"
-                                                          "availability: {}\n"
-                                                          "flags: {}\n"
-                                                          "callers: {}\n"
-                                                          "callees: {}",
-                                                          n.id,
-                                                          n.fn_name,
-                                                          n.demangled_name,
-                                                          n.visibility,
-                                                          n.availability,
-                                                          n.flags,
-                                                          get_names(n.callers),
-                                                          get_names(n.callees)),
-                                              ctx);
-    }
-};
+//   public:
+//     inline auto format(const safe::CallGraphNode& n, format_context& ctx)
+//     const
+//     {
+//         return formatter<std::string>::format(std::format("id: {}\n"
+//                                                           "func_name: {}\n"
+//                                                           "demangled_name:
+//                                                           {}\n" "visibility:
+//                                                           {}\n"
+//                                                           "availability:
+//                                                           {}\n" "flags: {}\n"
+//                                                           "callers: {}\n"
+//                                                           "callees: {}",
+//                                                           n.id,
+//                                                           n.fn_name,
+//                                                           n.demangled_name,
+//                                                           n.visibility,
+//                                                           n.availability,
+//                                                           n.flags,
+//                                                           get_names(n.callers),
+//                                                           get_names(n.callees)),
+//                                               ctx);
+//     }
+// };

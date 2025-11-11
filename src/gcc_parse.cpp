@@ -4,8 +4,6 @@
 #include <format>
 #include <fstream>
 #include <optional>
-#include <print>
-#include <queue>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -114,46 +112,6 @@ std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
 }
 }  // namespace
 
-void bfs(CallGraphNode* root)
-{
-    if (!root) {
-        return;
-    }
-
-    std::queue<std::pair<CallGraphNode*, int>> q;  // node and depth
-    std::unordered_map<int, int>
-      visit_count;  // track how many times we've seen each node
-
-    q.emplace(root, 0);
-
-    while (!q.empty()) {
-        auto [n, depth] = q.front();
-        q.pop();
-
-        // Limit visits to prevent infinite loops in cyclic graphs
-        if (visit_count[n->id] >= 10) {
-            continue;
-        }
-        visit_count[n->id]++;
-
-        // Print current node
-        std::string indent(static_cast<size_t>(depth) * 2, ' ');
-        std::println(
-          "{}[{}] {} ({})", indent, n->id, n->fn_name, n->demangled_name);
-
-        // Enqueue all callees
-        for (auto& [callee, attrs] : n->callees) {
-            if (!attrs.empty()) {
-                std::println("{}  with attributes: {}", indent, attrs);
-            }
-            // `callee` is an id (size_t). Enqueue the address of the
-            // corresponding Node instance.
-            q.emplace(&CallGraphNode::get_node_from_id(callee).value().get(),
-                      depth + 1);
-        }
-    }
-}
-
 CallGraphNode parse_gcc_wpa(std::string_view file_path)
 {
     std::ifstream file;
@@ -229,20 +187,18 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
         if (!rng::search(first_line, "__gxx_personality"sv).empty()) {
             continue;
         }
-        std::println("\nNEW ENTRY\n");
+
         // TODO: Use rng::enumerate when clang is updated
         for (size_t i = 0; i < split_vec.size(); i++) {
             auto& entry = split_vec[i];
             if (i == 0) {
                 auto m = fn_name_re.search(entry);
-                // std::println("entry:{}", entry);
 
                 auto iter = m.get<0>().to_view() | views::split('/')
                             | views::transform([](auto&& s) {
                                   return trim(std::string_view(s));
                               });
-                // Find a better way to do this, std::next nor std::advanced
-                // work as well nor did it++
+
                 auto fn_name = *iter.begin();
                 parsed_entry["fn_name"] = fn_name;
                 parsed_entry["id"] = *(iter | views::drop(1)).begin();
@@ -254,10 +210,6 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
                 parsed_entry["demangled_name"] = string(
                   demangle_name_iter.begin(), demangle_name_iter.end());
 
-                std::println("fn_name: {}, id: {}, demangled_name: {}",
-                             parsed_entry["fn_name"],
-                             parsed_entry["id"],
-                             parsed_entry["demangled_name"]);
                 continue;
             }
 
@@ -278,7 +230,6 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
             }) | rng::to<string>();
             rng::replace(key, ' ', '_');
             string value = trim(*(kv_iter | views::drop(1)).begin());
-            std::println("{}: {}", key, value);
             parsed_entry[key] = value;
         }
         table_entries.push_back(parsed_entry);
@@ -289,18 +240,15 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
     for (auto& entry : table_entries) {
         // Convert string id to numeric key before emplacing.
         size_t uid = static_cast<size_t>(std::stoul(entry["id"]));
-        CallGraphNode n = { static_cast<int>(uid),   entry["fn_name"],
-                            entry["demangled_name"], entry["visablity"],
-                            entry["avaliablity"],    entry["function_flags"] };
+        CallGraphNode n = { static_cast<size_t>(uid), entry["fn_name"],
+                            entry["demangled_name"],  entry["visablity"],
+                            entry["avaliablity"],     entry["function_flags"] };
         all_nodes.emplace(uid, std::move(n));
     }
 
     // Create Edges
     for (auto& entry : table_entries) {
         size_t id = std::stoi(entry["id"]);
-        if (entry["demangled_name"] == "bar") {
-            std::println("Breakpoint");
-        }
         if (!all_nodes.contains(id)) {
             continue;
         }
@@ -323,11 +271,9 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
         }
     }
 
-    std::println("Nodes:\n");
     CallGraphNode& main
       = CallGraphNode::get_node_from_name("main").value().get();
 
-    // Show BFS
     return main;
 }
 

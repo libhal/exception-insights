@@ -5,7 +5,6 @@ struct A
     int method()
     {
         throw "string";
-        return a;
     }
 };
 
@@ -14,7 +13,7 @@ void bar()
     throw 2;
 }
 
-void foo()
+void foo() noexcept
 {
     auto f = [] {};
     f();
