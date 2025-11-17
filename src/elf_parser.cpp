@@ -9,7 +9,7 @@
  *
  **/
 
-#include "../include/elf_parser.hpp"
+#include "elf_parser.hpp"
 
 ElfParser::ElfParser(std::string_view p_file_name)
   : m_file_name(p_file_name)
@@ -55,10 +55,12 @@ ElfParser::ElfParser(std::string_view p_file_name)
     m_load_elf_header();
     m_load_section_header();
     m_load_program_header();
+    m_load_symbol_table();
 };
 
 ElfParser::~ElfParser()
 {
+    elf_end(m_elf);
     close(m_file);
     std::println("ELF file closed.");
 }
@@ -84,6 +86,7 @@ void ElfParser::m_load_section_header()
                      elf_errmsg(-1));
     }
 
+    section_s current_section;
     char* section_name;
     Elf_Scn* section = nullptr;
     GElf_Shdr current_section_header;
@@ -108,7 +111,8 @@ void ElfParser::m_load_section_header()
             continue;
         }
 
-        m_section_header.emplace(section_name, current_section_header);
+        // m_section_header.emplace(section_name, current_section_header);
+        current_section.header = current_section_header;
 
         Elf_Data* section_data = elf_getdata(section, nullptr);
         if (!section_data) {
@@ -120,15 +124,51 @@ void ElfParser::m_load_section_header()
             continue;
         }
 
+        std::vector<std::byte> current_section_data;
         if (current_section_header.sh_type == SHT_NOBITS) {
-            m_section_data.emplace(section_name, std::vector<std::byte>());
+            current_section_data = {};
         } else {
             std::vector<std::byte> parsed_data(
               reinterpret_cast<const std::byte*>(section_data->d_buf),
               reinterpret_cast<const std::byte*>(section_data->d_buf) +
                 section_data->d_size);
-            m_section_data.emplace(section_name, parsed_data);
+            current_section_data = parsed_data;
         }
+        current_section.data = current_section_data;
+
+        m_sections.emplace(section_name, current_section);
+    }
+}
+
+void ElfParser::m_load_symbol_table(){
+    if (m_sections.find(".symtab") == m_sections.end()) {
+        return; 
+    }
+
+    if (m_sections.find(".strtab") == m_sections.end()) {
+        return; 
+    }
+
+    const GElf_Shdr& symtab_hdr = m_sections[".symtab"].header;
+    const std::vector<std::byte>& symtab_data = m_sections[".symtab"].data;
+    const std::vector<std::byte>& strtab_data = m_sections[".strtab"].data;
+    size_t symtab_count = symtab_hdr.sh_size / symtab_hdr.sh_entsize;
+
+    for (size_t i = 0; i < symtab_count; i++) {
+        const GElf_Sym* sym = reinterpret_cast<const GElf_Sym*>(
+            symtab_data.data() + (i * symtab_hdr.sh_entsize)
+        );
+        
+        const char* name = reinterpret_cast<const char*>(
+            strtab_data.data() + sym->st_name
+        );
+        
+        if (sym->st_name == 0) {
+            name = "";
+        }
+
+        symbol_s symbol = {name, sym->st_value, sym->st_info};
+        m_symbol_table.emplace_back(symbol);
     }
 }
 
@@ -157,134 +197,39 @@ void ElfParser::m_load_program_header()
     }
 }
 
-void ElfParser::print_elf_header()
+std::expected<GElf_Ehdr, elf_parser_error> ElfParser::get_elf_header()
 {
     if (!m_elf_header_loaded) {
-        std::println(
-          stderr,
-          "Error (print_elf_header): Elf header was not previously loaded: {}.",
-          elf_errmsg(-1));
+        return std::unexpected(elf_parser_error::UNLOADED_ELF_HEADER);
     } else {
-        std::println("ELF Header");
-        std::println("====================");
-        std::print("ident: ");
-        for (int i = 0; i < 16; i++) {
-            std::print("0x{:X}, ", m_elf_header.e_ident[i]);
-        }
-        std::println("");
-        std::println("type: 0x{:X}", m_elf_header.e_type);
-        std::println("machine: 0x{:X}", m_elf_header.e_machine);
-        std::println("version: 0x{:X}", m_elf_header.e_version);
-        std::println("entry: 0x{:X}", m_elf_header.e_entry);
-        std::println("phoff: 0x{:X}", m_elf_header.e_phoff);
-        std::println("shoff: 0x{:X}", m_elf_header.e_shoff);
-        std::println("flags: 0x{:X}", m_elf_header.e_flags);
-        std::println("ehsize: 0x{:X}", m_elf_header.e_ehsize);
-        std::println("phentsize: 0x{:X}", m_elf_header.e_phentsize);
-        std::println("shentsize: 0x{:X}", m_elf_header.e_shentsize);
-        std::println("shnum: 0x{:X}", m_elf_header.e_shnum);
-        std::println("phnum: 0x{:X}", m_elf_header.e_phnum);
+        return m_elf_header;
     }
 }
 
-void ElfParser::print_section_header()
+std::expected<section_s, elf_parser_error> ElfParser::get_section(std::string_view p_section)
 {
-    if (m_section_header.empty()) {
-        std::println(stderr,
-                     "Error(print_section_header): No section headers exists.");
-    } else {
-        std::println("Section Header: ({})", m_elf_header.e_shnum);
-        std::println("====================");
-        for (const auto& section : m_section_header) {
-            std::println("Section: {}", section.first);
-            std::println("   type : 0x{:X}", section.second.sh_type);
-            std::println("   flags : 0x{:X}", section.second.sh_flags);
-            std::println("   addr : 0x{:X}", section.second.sh_addr);
-            std::println("   offset : 0x{:X}", section.second.sh_offset);
-            std::println("   size : 0x{:X}", section.second.sh_size);
-            std::println("   link : 0x{:X}", section.second.sh_link);
-            std::println("   info : 0x{:X}", section.second.sh_info);
-            std::println("   addralign : 0x{:X}", section.second.sh_addralign);
-            std::println("   entsize : 0x{:X}", section.second.sh_entsize);
-            std::println("====================");
-        }
+    if(m_sections.empty()){
+        return std::unexpected(elf_parser_error::EMPTY_SECTION);
+    }  
+
+    if(!m_sections.contains(p_section)){
+        return std::unexpected(elf_parser_error::SECTION_NOT_FOUND);
     }
+
+    return m_sections[p_section];
 }
 
-void ElfParser::print_program_header()
+std::expected<std::span<GElf_Phdr>, elf_parser_error> ElfParser::get_program_header()
 {
-    if (m_program_header.empty()) {
-        std::print(stderr,
-                   "Error (print_program_header): No program headers exists.");
-    } else {
-        for (int i = 0; i < m_elf_header.e_phnum; i++) {
-            std::println("Program Header: {}", i);
-            std::println("====================");
-            std::println("type : 0x{:X}", m_program_header[i].p_type);
-            std::println("flags : 0x{:X}", m_program_header[i].p_flags);
-            std::println("offset : 0x{:X}", m_program_header[i].p_offset);
-            std::println("vaddr : 0x{:X}", m_program_header[i].p_vaddr);
-            std::println("paddr : 0x{:X}", m_program_header[i].p_paddr);
-            std::println("filez : 0x{:X}", m_program_header[i].p_filesz);
-            std::println("memz : 0x{:X}", m_program_header[i].p_memsz);
-            std::println("align : 0x{:X}", m_program_header[i].p_align);
-            std::println("====================");
-        }
-    }
+    if(m_program_header.empty()){
+        return std::unexpected(elf_parser_error::EMPTY_PROGRAM);
+    } 
+    return m_program_header;
 }
 
-std::variant<uint32_t, uint64_t> ElfParser::get_section_addr(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_addr;
-    try {
-        section_addr = m_section_header.at(p_section).sh_addr;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_addr) {}: Section Does Not Exist: {}",
-                     e.what(),
-                     p_section);
+std::expected<std::span<symbol_s>, elf_parser_error> ElfParser::get_symbol_table(){
+    if(m_symbol_table.empty()){
+        return std::unexpected(elf_parser_error::EMPTY_SYMBOL);
     }
-    return section_addr;
-}
-
-std::variant<uint32_t, uint64_t> ElfParser::get_section_offset(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_offset;
-    try {
-        section_offset = m_section_header.at(p_section).sh_offset;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_offset): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_offset;
-}
-
-std::variant<uint32_t, uint64_t> ElfParser::get_section_size(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_size;
-    try {
-        section_size = m_section_header.at(p_section).sh_size;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_size): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_size;
-}
-
-std::vector<std::byte> ElfParser::get_section_data(std::string_view p_section)
-{
-    std::vector<std::byte> section_data;
-    try {
-        section_data = m_section_data.at(p_section);
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_data): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_data;
+    return m_symbol_table;
 }
