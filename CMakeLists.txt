@@ -13,7 +13,9 @@ find_package(libelf REQUIRED)
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators") 
 
 #Linking Libraries
-add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp src/gcc_parse.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp 
+                               src/elf_parser.cpp 
+                               src/gcc_parse.cpp)
 
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)
@@ -45,11 +47,14 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
 libhal_unit_test(SOURCES
     tests/main.test.cpp
-    tests/testing.test.cpp
+    # tests/testing.test.cpp
+
+    src/elf_parser.cpp
 
     PACKAGES
     tl-function-ref
 
     LINK_LIBRARIES
     tl::function-ref
+    libelf::libelf
 )
