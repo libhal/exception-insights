@@ -46,20 +46,20 @@ enum class elf_parser_error{
  * @struct symbol_s
  * @brief Structure representing an ELF symbol table entry.
  */
-typedef struct{
+struct symbol_s{
   std::string_view name;                    //!< Symbol name from string table
   std::variant<uint32_t, uint64_t> value;   //!< Symbol value (address or constant)
   unsigned char info;                       //!< Symbol type and binding attributes
-}symbol_s;
+};
 
 /**
  * @struct section_s
  * @brief Structure representing an ELF section with its header and data.
  */
-typedef struct{
+struct section_s{
   GElf_Shdr header;             //!< Section header information
   std::vector<std::byte> data;  //!< Section data bytes
-}section_s;
+};
 
 
 /**
