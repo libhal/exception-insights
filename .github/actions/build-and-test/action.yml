@@ -18,4 +18,4 @@ runs:
     
     - name: Build Program
       shell: bash
-      run:  ${{ inputs.conan-path }} build . -s build_type=Release -b missing
+      run: ${{ inputs.conan-path }} build . -s build_type=Release -b missing

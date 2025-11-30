@@ -46,14 +46,17 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_BUILD_FLAGS})
 
 libhal_unit_test(SOURCES
     tests/main.test.cpp
+    tests/gcc_callgraph.test.cpp
     # tests/testing.test.cpp
 
     src/elf_parser.cpp
+    src/gcc_parse.cpp
 
     PACKAGES
     tl-function-ref
 
     LINK_LIBRARIES
     tl::function-ref
+    ctre::ctre
     libelf::libelf
 )

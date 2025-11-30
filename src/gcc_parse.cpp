@@ -1,19 +1,49 @@
+/** @file gcc_parse.cpp
+ * @author Madeline Schneider
+ * @brief GCC WPA callgraph parser implementation file
+ * @version 0.1
+ * @date 2025-07-17
+ *
+ * @copyright Copyright (c) 2025
+ */
+
 #include <algorithm>
-#include <cctype>
-#include <cstddef>
-#include <format>
 #include <fstream>
-#include <optional>
 #include <ranges>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-#include <vector>
 
 #include "gcc_parse.hpp"
 
 namespace safe {
+
+std::optional<std::shared_ptr<CallGraphNode const>> CallGraph::get_node_from_id(
+  size_t p_id) const
+{
+    try {
+        return m_nodes.at(p_id);
+    } catch (std::out_of_range) {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::shared_ptr<CallGraphNode const>>
+CallGraph::get_node_from_name(std::string_view p_name) const
+{
+    // TODO: Make more efficent
+    for (auto& [id, n] : m_nodes) {
+        if (p_name == n->fn_name) {
+            return n;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::shared_ptr<CallGraphNode const>> CallGraphNode::from_id(
+  size_t p_id) const
+{
+    return m_graph.get_node_from_id(p_id);
+}
+
 namespace {
 using string = std::string;
 using std::operator""sv;
@@ -45,8 +75,8 @@ constexpr bool is_word_in_str(std::string_view const word,
                        [word](auto&& c) { return word == c; });
 }
 
-std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
-  std::string& inp)
+[[maybe_unused]] std::vector<std::pair<string, std::vector<string>>>
+parse_fn_list(std::string& inp)
 {
     std::vector<string> split_vec;
     bool is_attr_str = false;
@@ -84,35 +114,37 @@ std::vector<std::pair<string, std::vector<string>>> parse_fn_list(
     }
 
     std::vector<std::pair<string, std::vector<string>>> res;
-    std::pair<string, std::vector<string>>* prev = nullptr;
+    std::optional<std::pair<string, std::vector<string>>> prev = std::nullopt;
     for (string& s : split_vec) {
         if (ctre::match<"(\\(.+\\))+">(s)) {
             if (s.empty()) {
                 continue;
             }
 
-            if (!prev) {
+            if (!prev.has_value()) {
                 throw std::invalid_argument("Invalid format given");
             }
             prev->second.emplace_back(s.data() + 1, s.length() - 2);
             continue;
         }
 
-        string name = *(s | views::split('/') | views::take(1)
+        string name = *(s | views::split('/') | views::drop(1) | views::take(1)
                         | views::transform(
                           [](auto&& ss) { return trim(std::string_view(ss)); }))
                          .begin();
 
         std::pair<string, std::vector<string>> p(name, {});
         res.push_back(p);
-        prev = &res.back();
+        prev = res.back();
     }
 
     return res;
 }
+
 }  // namespace
 
-CallGraphNode parse_gcc_wpa(std::string_view file_path)
+std::vector<std::unordered_map<std::string, std::string>> parse_gcc_wpa(
+  std::string_view file_path)
 {
     std::ifstream file;
     file.open(file_path);
@@ -235,15 +267,31 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
         table_entries.push_back(parsed_entry);
     }
 
+    return table_entries;
+}
+
+// Can throw: (https://en.cppreference.com/w/cpp/string/basic_string/stoul),
+// bad_optional_access, should never be null
+CallGraph parse_gcc_callgraph(
+  std::vector<std::unordered_map<std::string, std::string>> p_parsed_table)
+{
     // Create all nodes
-    auto& all_nodes = CallGraphNode::all_nodes;
+    CallGraph graph;
+    auto& table_entries = p_parsed_table;
+    auto& all_nodes = graph.m_nodes;
     for (auto& entry : table_entries) {
         // Convert string id to numeric key before emplacing.
         size_t uid = static_cast<size_t>(std::stoul(entry["id"]));
-        CallGraphNode n = { static_cast<size_t>(uid), entry["fn_name"],
-                            entry["demangled_name"],  entry["visablity"],
-                            entry["avaliablity"],     entry["function_flags"] };
-        all_nodes.emplace(uid, std::move(n));
+        auto n = std::make_shared<CallGraphNode>(
+          NodeArgs{ .p_nid = static_cast<size_t>(uid),
+                    .p_fn_name = entry["fn_name"],
+                    .p_demangled_name = entry["demangled_name"],
+                    .p_visibility = entry["visablity"],
+                    .p_avaliablity = entry["avaliablity"],
+                    .p_flags = entry["function_flags"],
+                    .p_graph = graph });
+
+        all_nodes.emplace(uid, n);
     }
 
     // Create Edges
@@ -255,26 +303,28 @@ CallGraphNode parse_gcc_wpa(std::string_view file_path)
         auto caller_pairs = parse_fn_list(entry["called_by"]);
         auto callee_pairs = parse_fn_list(entry["calls"]);
 
-        CallGraphNode& n = all_nodes.at(id);
+        auto n = all_nodes.at(id);
 
         // Callers
-        for (const auto& [node_name, attribs] : caller_pairs) {
-            auto& nn
-              = CallGraphNode::get_node_from_name(node_name).value().get();
-            n.callers.emplace_back(nn.id, attribs);
+        for (const auto& [node_id_str, attribs] : caller_pairs) {
+            size_t const node_id = std::stoul(node_id_str);
+            auto nn = graph.get_node_from_id(node_id).value();
+            n->callers.emplace_back(nn->id, attribs);
         }
 
-        for (const auto& [node_name, attribs] : callee_pairs) {
-            auto& nn
-              = CallGraphNode::get_node_from_name(node_name).value().get();
-            n.callees.emplace_back(nn.id, attribs);
+        // Callees
+        for (const auto& [node_id_str, attribs] : callee_pairs) {
+            size_t const node_id = std::stoul(node_id_str);
+            auto nn = graph.get_node_from_id(node_id).value();
+            n->callees.emplace_back(nn->id, attribs);
+
+            if (nn->fn_name == "__cxa_throw") {
+                graph.m_throw_callers.emplace_back(n);
+            }
         }
     }
 
-    CallGraphNode& main
-      = CallGraphNode::get_node_from_name("main").value().get();
-
-    return main;
+    return graph;
 }
 
 }  // namespace safe
