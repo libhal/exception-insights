@@ -15,7 +15,8 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/Debug/generators")
 #Linking Libraries
 add_executable(${PROJECT_NAME} src/main.cpp 
                                src/elf_parser.cpp 
-                               src/gcc_parse.cpp)
+                               src/gcc_parse.cpp
+                               src/abi_parse.cpp)
 
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)

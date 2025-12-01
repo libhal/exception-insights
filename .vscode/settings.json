@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "ranges": "cpp",
+        "variant": "cpp",
+        "iostream": "cpp"
+    }
+}
