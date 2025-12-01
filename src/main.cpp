@@ -10,11 +10,13 @@
  */
 #include <print>
 #include <tuple>
+#include <expected>
+#include <string>
 
-int main(int argc, char** argv)
-{
-    std::ignore = argc;
-    std::ignore = argv;
-    std::println("Hello C++: {}", __cplusplus);
+#include "safe.hpp"
+
+int main(int argc, char * argv[])
+{   
+    Safe safe(argc, argv);
     return 0;
 }
