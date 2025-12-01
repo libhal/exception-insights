@@ -9,7 +9,7 @@
  *
  **/
 
-#include "../include/elf_parser.hpp"
+#include "elf_parser.hpp"
 
 ElfParser::ElfParser(std::string_view p_file_name)
   : m_file_name(p_file_name)
@@ -55,10 +55,12 @@ ElfParser::ElfParser(std::string_view p_file_name)
     m_load_elf_header();
     m_load_section_header();
     m_load_program_header();
+    m_load_symbol_table();
 };
 
 ElfParser::~ElfParser()
 {
+    elf_end(m_elf);
     close(m_file);
     std::println("ELF file closed.");
 }
@@ -225,58 +227,9 @@ std::expected<std::span<GElf_Phdr>, elf_parser_error> ElfParser::get_program_hea
     return m_program_header;
 }
 
-std::variant<uint32_t, uint64_t> ElfParser::get_section_addr(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_addr;
-    try {
-        section_addr = m_section_header.at(p_section).sh_addr;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_addr) {}: Section Does Not Exist: {}",
-                     e.what(),
-                     p_section);
+std::expected<std::span<symbol_s>, elf_parser_error> ElfParser::get_symbol_table(){
+    if(m_symbol_table.empty()){
+        return std::unexpected(elf_parser_error::EMPTY_SYMBOL);
     }
-    return section_addr;
-}
-
-std::variant<uint32_t, uint64_t> ElfParser::get_section_offset(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_offset;
-    try {
-        section_offset = m_section_header.at(p_section).sh_offset;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_offset): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_offset;
-}
-
-std::variant<uint32_t, uint64_t> ElfParser::get_section_size(
-  std::string_view p_section)
-{
-    std::variant<uint32_t, u_int64_t> section_size;
-    try {
-        section_size = m_section_header.at(p_section).sh_size;
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_size): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_size;
-}
-
-std::vector<std::byte> ElfParser::get_section_data(std::string_view p_section)
-{
-    std::vector<std::byte> section_data;
-    try {
-        section_data = m_section_data.at(p_section);
-    } catch (const std::out_of_range& e) {
-        std::println(stderr,
-                     "Error (get_section_data): Section Does Not Exist: {}",
-                     e.what());
-    }
-    return section_data;
+    return m_symbol_table;
 }

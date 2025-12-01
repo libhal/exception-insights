@@ -53,11 +53,11 @@ struct Scope
     std::vector<ScopeHandler> handlers;
 };
 
-class AbiParser
+class GccParser
 {
   public:
-    explicit AbiParser(const std::vector<std::byte>& lsda_data);
-    explicit AbiParser(const std::vector<uint8_t>& lsda_data);
+    explicit GccParser(const std::vector<std::byte>& lsda_data);
+    explicit GccParser(const std::vector<uint8_t>& lsda_data);
 
 
     std::optional<uint64_t> resolve_type(int64_t type_index) const;

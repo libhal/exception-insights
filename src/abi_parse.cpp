@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <iostream>
 
-void AbiParser::check(size_t n) const
+void GccParser::check(size_t n) const
 {
     if (index + n > data.size()) {
         throw std::runtime_error("LSDA read out of bounds");
@@ -22,7 +22,7 @@ void AbiParser::check(size_t n) const
 }
 
 // reads 1 byte and then it goes forward with cursor
-uint8_t AbiParser::read8()
+uint8_t GccParser::read8()
 {
     check(1);
     return data[index++];
@@ -30,7 +30,7 @@ uint8_t AbiParser::read8()
 
 // reads 2 bytes and makes a 16 bit integer
 
-uint16_t AbiParser::read16()
+uint16_t GccParser::read16()
 {
     check(2);
     uint16_t v = 0;
@@ -40,7 +40,7 @@ uint16_t AbiParser::read16()
     return v;
 }
 // reads 4 bytes and makes a 32 bit integer
-uint32_t AbiParser::read32()
+uint32_t GccParser::read32()
 {
     check(4);
     uint32_t v = 0;
@@ -50,7 +50,7 @@ uint32_t AbiParser::read32()
     return v;
 }
 // reads 8 bytes and makes a 64 bit integer
-uint64_t AbiParser::read64()
+uint64_t GccParser::read64()
 {
     check(8);
     uint64_t value = 0;
@@ -60,7 +60,7 @@ uint64_t AbiParser::read64()
     return value;
 }
 
-void AbiParser::build_scopes()
+void GccParser::build_scopes()
 {
     scopes.clear();
 
@@ -120,7 +120,7 @@ void AbiParser::build_scopes()
     }
 }
 
-AbiParser::AbiParser(const std::vector<std::byte>& lsda_data)
+GccParser::GccParser(const std::vector<std::byte>& lsda_data)
 {
     data.reserve(lsda_data.size());
     for (std::byte b : lsda_data) {
@@ -129,13 +129,13 @@ AbiParser::AbiParser(const std::vector<std::byte>& lsda_data)
     parse();
 }
 
-AbiParser::AbiParser(const std::vector<uint8_t>& lsda_data)
+GccParser::GccParser(const std::vector<uint8_t>& lsda_data)
 {
     data = lsda_data;      // copy into owned storage
     parse();
 }
 
-uint64_t AbiParser::read_uleb128(const std::vector<uint8_t>& buf, size_t& i)
+uint64_t GccParser::read_uleb128(const std::vector<uint8_t>& buf, size_t& i)
 {
     uint64_t result = 0;
     int shift = 0;
@@ -153,7 +153,7 @@ uint64_t AbiParser::read_uleb128(const std::vector<uint8_t>& buf, size_t& i)
     return result;
 }
 
-int64_t AbiParser::read_sleb128(const std::vector<uint8_t>& buf, size_t& i)
+int64_t GccParser::read_sleb128(const std::vector<uint8_t>& buf, size_t& i)
 {
     int64_t result = 0;
     int shift = 0;
@@ -176,7 +176,7 @@ int64_t AbiParser::read_sleb128(const std::vector<uint8_t>& buf, size_t& i)
 }
 
 // read encode value
-uint64_t AbiParser::r_encode(uint8_t encoding, uint64_t pcrel)
+uint64_t GccParser::r_encode(uint8_t encoding, uint64_t pcrel)
 {
     if (encoding == 0xFF) {
         return 0;  // omitted
@@ -229,7 +229,7 @@ uint64_t AbiParser::r_encode(uint8_t encoding, uint64_t pcrel)
 }
 
 // parse
-void AbiParser::parse()
+void GccParser::parse()
 {
     call_sites.clear();
     actions.clear();
@@ -287,7 +287,7 @@ void AbiParser::parse()
     build_scopes();
 }
 
-std::optional<uint64_t> AbiParser::resolve_type(int64_t type_index) const
+std::optional<uint64_t> GccParser::resolve_type(int64_t type_index) const
 {
     // Cleanup and filter entries have no concrete type address
     if (type_index <= 0) {
@@ -307,7 +307,7 @@ std::optional<uint64_t> AbiParser::resolve_type(int64_t type_index) const
 }
 
 // parse LSDA header
-void AbiParser::parse_header(uint8_t& start_enc,
+void GccParser::parse_header(uint8_t& start_enc,
                              uint8_t& tt_enc,
                              uint64_t& tt_off)
 {
@@ -326,7 +326,7 @@ void AbiParser::parse_header(uint8_t& start_enc,
 }
 
 // parse callsite table
-void AbiParser::parse_call_sites(uint8_t call_enc, uint64_t table_len)
+void GccParser::parse_call_sites(uint8_t call_enc, uint64_t table_len)
 {
     size_t end = index + static_cast<size_t>(table_len);
     while (index < end) {
@@ -343,7 +343,7 @@ void AbiParser::parse_call_sites(uint8_t call_enc, uint64_t table_len)
 }
 
 // parse action table end
-void AbiParser::parse_actions_tail(size_t table_start, size_t limit_end)
+void GccParser::parse_actions_tail(size_t table_start, size_t limit_end)
 {
     while (index < limit_end) {
         Action a{};
@@ -399,7 +399,7 @@ void AbiParser::parse_actions_tail(size_t table_start, size_t limit_end)
 
 // printers
 // NOTE: TEMPORARILY ADDED FILENAME PARAMETER FOR DEBUGGING
-void AbiParser::print_call_sites(const std::string& filename) const
+void GccParser::print_call_sites(const std::string& filename) const
 {
     std::ofstream out(filename);
     if (!out) {
@@ -413,7 +413,7 @@ void AbiParser::print_call_sites(const std::string& filename) const
     }
 }
 
-void AbiParser::print_actions(const std::string& filename) const
+void GccParser::print_actions(const std::string& filename) const
 {
     std::ofstream out(filename, std::ios::app);
     if (!out) {

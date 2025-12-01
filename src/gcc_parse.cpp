@@ -53,30 +53,30 @@ inline auto get_names(std::span<Node> v)
            | rng::to<std::vector<string>>();
 }
 
-template<>
-struct std::formatter<Node> : std::formatter<std::string>
-{
-    auto format(Node& n, format_context& ctx) const
-    {
-        return formatter<std::string>::format(std::format("id: {}"
-                                                          "func_name: {}"
-                                                          "demangled_name: {}"
-                                                          "visibility: {}"
-                                                          "availability: {}"
-                                                          "flags: {}"
-                                                          "callers: {}"
-                                                          "callees: {}",
-                                                          n.id,
-                                                          n.fn_name,
-                                                          n.demangled_name,
-                                                          n.visibility,
-                                                          n.availability,
-                                                          n.flags,
-                                                          get_names(n.callers),
-                                                          get_names(n.callees)),
-                                              ctx);
-    }
-};
+// template<>
+// struct std::formatter<Node> : std::formatter<std::string>
+// {
+//     auto format(Node& n, format_context& ctx) const
+//     {
+//         return formatter<std::string>::format(std::format("id: {}"
+//                                                           "func_name: {}"
+//                                                           "demangled_name: {}"
+//                                                           "visibility: {}"
+//                                                           "availability: {}"
+//                                                           "flags: {}"
+//                                                           "callers: {}"
+//                                                           "callees: {}",
+//                                                           n.id,
+//                                                           n.fn_name,
+//                                                           n.demangled_name,
+//                                                           n.visibility,
+//                                                           n.availability,
+//                                                           n.flags,
+//                                                           get_names(n.callers),
+//                                                           get_names(n.callees)),
+//                                               ctx);
+//     }
+// };
 
 constexpr string trim(std::string_view str)
 {
