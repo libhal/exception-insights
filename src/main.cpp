@@ -2,7 +2,6 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
-#include <string>
 #include <filesystem>
 
 // keep in mind of pathing!!!
@@ -24,11 +23,10 @@ int main(int argc, char** argv)
 
     std::vector<uint8_t> lsda_data(
         (std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    Abi_parser parser(lsda_data);
+    AbiParser parser(lsda_data);
 
     try 
     {
-        parser.parse();
         parser.print_call_sites("LSDA/lsda_output.txt"); // temporary file output
         parser.print_actions("LSDA/lsda_output.txt"); // temporary file output
 
