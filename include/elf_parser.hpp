@@ -28,7 +28,7 @@
  * @enum elf_parser_error
  * @brief Error codes for ELF parsing operations.
  */
-enum class elf_parser_error
+enum class elf_parser_error : uint8_t
 {
     UNLOADED_ELF_HEADER,  //!< ELF header has not been loaded
     SECTION_NOT_FOUND,    //!< Requested section does not exist
