@@ -1,27 +1,258 @@
+/** @file gcc_parse.hpp
+ * @author Madeline Schneider
+ * @brief GCC WPA callgraph parser header file
+ * @version 0.1
+ * @date 2025-07-17
+ *
+ * @copyright Copyright (c) 2025
+ */
+
 #pragma once
-#include <algorithm>
+
 #include <cctype>
 #include <cstddef>
+
+#include <format>
+#include <memory>
+#include <optional>
+#include <print>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
+
 #include <ctll/fixed_string.hpp>
 #include <ctre.hpp>
 #include <ctre/wrapper.hpp>
-#include <ranges>
-#include <string>
 
-namespace rng = std::ranges;
-namespace views = rng::views;
+namespace safe {
+struct CallGraphNode;
 
-using string = std::string;
-using std::operator""sv;
-
-struct Node;
-
-void parse(std::string file_path);
-
-constexpr bool is_word_in_str(std::string_view const word,
-                              std::string_view const full_str)
+class CallGraph
 {
-    constexpr auto pattern = ctll::fixed_string{ "\\n| |\\t" };
-    return rng::any_of(ctre::split<pattern>(full_str),
-                       [word](auto&& c) { return word == c; });
-}
+    friend CallGraphNode;
+
+  public:
+    CallGraph() = default;
+    CallGraph(CallGraph const&) = default;
+    CallGraph& operator=(CallGraph const&) = default;
+    CallGraph(CallGraph&&) = default;
+    CallGraph& operator=(CallGraph&&) = default;
+
+    /**
+     * @brief Get a node from a function's name.
+     * NOTE: Expects the original functions name, not the demangled name.
+     *
+     * @param p_name - The unmodified, mangled name of the function to look up.
+     *
+     * @return An optional reference to the node if found or nullopt if not
+     * found.
+     */
+    [[nodiscard]] std::optional<std::shared_ptr<CallGraphNode const>>
+    get_node_from_name(std::string_view p_name) const;
+
+    /**
+     * @brief Get a node from a given function ID dictated by the compiler. Node
+     * is acquired from internal hashmap storing all nodes in existance
+     *
+     * @param p_id The function ID
+     *
+     * @returns An optional reference to the node if found or nullopt if not
+     * found.
+     */
+    [[nodiscard]] std::optional<std::shared_ptr<CallGraphNode const>>
+    get_node_from_id(size_t p_id) const;
+
+    std::unordered_map<size_t, std::shared_ptr<CallGraphNode>> m_nodes;
+    std::vector<std::shared_ptr<CallGraphNode const>> m_throw_callers;
+};
+
+struct NodeArgs
+{
+    size_t p_nid;
+    std::string p_fn_name;
+    std::string p_demangled_name;
+    std::string p_visibility;
+    std::string p_avaliablity;
+    std::string p_flags;
+    CallGraph const& p_graph;
+};
+
+/**
+ * @brief A node representing an entry within a program's callgraph. Used
+ * primarily as a data class with publically accessible member variables.
+ * Should be used to build an N-tree when building a callgraph. Currently, class
+ * is tailored for GCC callgraph dumped artifacts, subject to change.
+ */
+struct CallGraphNode
+{
+    CallGraphNode(NodeArgs args)
+      : id(args.p_nid)
+      , fn_name(std::move(args.p_fn_name))
+      , demangled_name(std::move(args.p_demangled_name))
+      , visibility(std::move(args.p_visibility))
+      , availability(std::move(args.p_avaliablity))
+      , flags(std::move(args.p_flags))
+      , m_graph(args.p_graph) {};
+
+    CallGraphNode& operator=(CallGraphNode const&) = delete;
+    CallGraphNode(CallGraphNode const&) = default;
+    CallGraphNode& operator=(CallGraphNode&&) = delete;
+    CallGraphNode(CallGraphNode&&) = default;
+
+    size_t id;
+    std::string fn_name;
+    std::string demangled_name;
+    std::string visibility;
+    std::string availability;
+    std::string flags;
+
+    std::vector<std::pair<size_t, std::vector<std::string>>> callees;
+
+    /**
+     * @brief Gets all callees node references, if an ID is stored for a node
+     * that doesn't exist, node is not retrieved, no error raised.
+     *
+     * @return Vector of references to callees
+     */
+    [[nodiscard]] inline std::vector<std::shared_ptr<CallGraphNode const>>
+    callee_refs() const
+    {
+        return get_neigh_refs(false);
+    }
+
+    std::vector<std::pair<size_t, std::vector<std::string>>> callers;
+
+    /**
+     * @brief Gets all callers node references, if an ID is stored for a node
+     * that doesn't exist, node is not retrieved, no error raised.
+     *
+     * @return Vector of references to callers
+     */
+    [[nodiscard]] inline std::vector<std::shared_ptr<CallGraphNode const>>
+    caller_refs() const
+    {
+        return get_neigh_refs(true);
+    }
+
+    [[nodiscard]] std::optional<std::shared_ptr<CallGraphNode const>> from_id(
+      size_t p_id) const;
+
+    CallGraph const& m_graph;
+
+  private:
+    [[nodiscard]] inline std::vector<std::shared_ptr<CallGraphNode const>>
+    get_neigh_refs(bool is_callers) const
+    {
+        std::vector<std::shared_ptr<CallGraphNode const>> res;
+        std::vector<std::pair<size_t, std::vector<std::string>>> const& neighs
+          = is_callers ? callers : callees;
+
+        for (auto& neigh_pair : neighs) {
+            auto neigh_node = from_id(neigh_pair.first);
+            if (neigh_node.has_value()) {
+                res.push_back(neigh_node.value());
+            }
+        }
+
+        return res;
+    }
+};
+
+/**
+ * @brief Parses a GCC generated whole-program file generated by the
+ * `-fdump-ipa-whole-program flag.` For a cross translation unit file (wpa
+ * instead of cpp), -flto must also be enabled.
+ *
+ * @param file_path The string of the file path. Can be relative to the binary
+ * or an absolute path.
+ *
+ */
+std::vector<std::unordered_map<std::string, std::string>> parse_gcc_wpa(
+  std::string_view file_path);
+
+/** @brief Parses a vector of parsed GCC WPA key-value table entries into a
+ * CallGraph
+ * @param p_parsed_table The vector of parsed table entries from the WPA file.
+ *
+ * @return The constructed CallGraph
+ */
+CallGraph parse_gcc_callgraph(
+  std::vector<std::unordered_map<std::string, std::string>> p_parsed_table);
+
+}  // namespace safe
+template<>
+struct std::formatter<safe::CallGraphNode> : std::formatter<std::string>
+{
+  private:
+    static std::vector<std::string> get_names(
+      const safe::CallGraphNode& owner,
+      const std::vector<std::pair<size_t, std::vector<std::string>>>& v)
+    {
+        std::vector<std::string> res;
+        res.reserve(v.size());
+        for (const auto& p : v) {
+            std::string name;
+            if (auto opt = owner.from_id(p.first); opt.has_value()) {
+                name = opt.value()->fn_name;
+            } else {
+                name = std::to_string(p.first);
+            }
+
+            // join tags in p.second into a comma-separated list
+            std::string tags = "[";
+            bool first = true;
+            for (const auto& s : p.second) {
+                if (!first)
+                    tags += ", ";
+                first = false;
+                tags += s;
+            }
+            tags += "]";
+
+            res.push_back(std::format("{}: {}", name, tags));
+        }
+        return res;
+    }
+
+  public:
+    inline auto format(const safe::CallGraphNode& n,
+                       std::format_context& ctx) const
+    {
+        auto callers_v = get_names(n, n.callers);
+        auto callees_v = get_names(n, n.callees);
+
+        auto join_vec = [](const std::vector<std::string>& vs) {
+            std::string out = "[";
+            for (size_t i = 0; i < vs.size(); ++i) {
+                if (i)
+                    out += ", ";
+                out += vs[i];
+            }
+            out += "]";
+            return out;
+        };
+
+        std::string callers_s = join_vec(callers_v);
+        std::string callees_s = join_vec(callees_v);
+
+        return std::formatter<std::string>::format(
+          std::format("id: {}\n"
+                      "func_name: {}\n"
+                      "demangled_name: {}\n"
+                      "visibility: {}\n"
+                      "availability: {}\n"
+                      "flags: {}\n"
+                      "callers: {}\n"
+                      "callees: {}",
+                      n.id,
+                      n.fn_name,
+                      n.demangled_name,
+                      n.visibility,
+                      n.availability,
+                      n.flags,
+                      callers_s,
+                      callees_s),
+          ctx);
+    }
+};

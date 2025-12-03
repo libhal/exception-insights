@@ -1,82 +1,54 @@
-#include "gcc_parse.hpp"
+/** @file gcc_parse.cpp
+ * @author Madeline Schneider
+ * @brief GCC WPA callgraph parser implementation file
+ * @version 0.1
+ * @date 2025-07-17
+ *
+ * @copyright Copyright (c) 2025
+ */
+
 #include <algorithm>
-#include <cstddef>
-#include <format>
 #include <fstream>
-#include <print>
 #include <ranges>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-#include <vector>
 
-namespace rng = std::ranges;
-namespace views = rng::views;
+#include "gcc_parse.hpp"
 
-using string = std::string;
-using std::operator""sv;
+namespace safe {
 
-struct Node
+std::optional<std::shared_ptr<CallGraphNode const>> CallGraph::get_node_from_id(
+  size_t p_id) const
 {
-    Node(int p_nid,
-         std::string p_fn_name,
-         std::string p_demangled_name,
-         std::string p_visibility,
-         std::string p_avaliablity,
-         std::string p_flags)
-      : id(p_nid)
-      , fn_name(std::move(p_fn_name))
-      , demangled_name(std::move(p_demangled_name))
-      , visibility(std::move(p_visibility))
-      , availability(std::move(p_avaliablity))
-      , flags(std::move(p_flags)) {};
-
-    Node& operator=(Node const&) = default;
-    Node(Node const&) = default;
-    Node& operator=(Node&&) = default;
-    Node(Node&&) = default;
-    // Node() = default;
-
-    int id;
-    std::string fn_name;
-    std::string demangled_name;
-    std::string visibility;
-    std::string availability;
-    std::string flags;
-    std::vector<Node> callees;
-    std::vector<Node> callers;
-};
-
-inline auto get_names(std::span<Node> v)
-{
-    return v | views::transform([](auto& n) { return n.fn_name; })
-           | rng::to<std::vector<string>>();
+    try {
+        return m_nodes.at(p_id);
+    } catch (std::out_of_range) {
+        return std::nullopt;
+    }
 }
 
-// template<>
-// struct std::formatter<Node> : std::formatter<std::string>
-// {
-//     auto format(Node& n, format_context& ctx) const
-//     {
-//         return formatter<std::string>::format(std::format("id: {}"
-//                                                           "func_name: {}"
-//                                                           "demangled_name: {}"
-//                                                           "visibility: {}"
-//                                                           "availability: {}"
-//                                                           "flags: {}"
-//                                                           "callers: {}"
-//                                                           "callees: {}",
-//                                                           n.id,
-//                                                           n.fn_name,
-//                                                           n.demangled_name,
-//                                                           n.visibility,
-//                                                           n.availability,
-//                                                           n.flags,
-//                                                           get_names(n.callers),
-//                                                           get_names(n.callees)),
-//                                               ctx);
-//     }
-// };
+std::optional<std::shared_ptr<CallGraphNode const>>
+CallGraph::get_node_from_name(std::string_view p_name) const
+{
+    // TODO: Make more efficent
+    for (auto& [id, n] : m_nodes) {
+        if (p_name == n->fn_name) {
+            return n;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::shared_ptr<CallGraphNode const>> CallGraphNode::from_id(
+  size_t p_id) const
+{
+    return m_graph.get_node_from_id(p_id);
+}
+
+namespace {
+using string = std::string;
+using std::operator""sv;
+namespace rng = std::ranges;
+namespace views = rng::views;
 
 constexpr string trim(std::string_view str)
 {
@@ -95,26 +67,84 @@ constexpr bool is_whitespace(std::string_view sv)
     return rng::all_of(sv, [](char c) { return std::isspace(c); });
 }
 
-std::vector<string> parse_fn_list(std::string_view inp)
+constexpr bool is_word_in_str(std::string_view const word,
+                              std::string_view const full_str)
 {
-    auto split_vec
-      = inp | views::split(' ')
-        | views::transform([](auto&& s) { return std::string_view(s); })
-        | rng::to<std::vector<string>>();
+    constexpr auto pattern = ctll::fixed_string{ "\\n| |\\t" };
+    return rng::any_of(ctre::split<pattern>(full_str),
+                       [word](auto&& c) { return word == c; });
+}
 
-    std::vector<string> res;
+[[maybe_unused]] std::vector<std::pair<string, std::vector<string>>>
+parse_fn_list(std::string& inp)
+{
+    std::vector<string> split_vec;
+    bool is_attr_str = false;
+
+    string buf = "";
+    for (size_t pos = 0; pos < inp.length(); pos++) {
+        const auto c = inp[pos];
+        if (buf.empty() && c == ' ') {
+            continue;
+        }
+        if (c == '(' && !is_attr_str && buf.empty()) {
+            buf.push_back(c);
+            is_attr_str = true;
+            continue;
+        }
+
+        if ((c == ')' && is_attr_str) || (!is_attr_str && c == ' ')) {
+            if (c != ' ') {
+                buf.push_back(c);
+            }
+
+            split_vec.push_back(buf);
+            buf = "";
+            is_attr_str = false;
+            continue;
+        }
+
+        if (is_attr_str || c != ' ') {
+            buf.push_back(c);
+        }
+    }
+
+    if (!buf.empty()) {
+        split_vec.push_back(buf);
+    }
+
+    std::vector<std::pair<string, std::vector<string>>> res;
+    std::optional<std::pair<string, std::vector<string>>> prev = std::nullopt;
     for (string& s : split_vec) {
-        string name = *(s | views::split('/') | views::take(1)
+        if (ctre::match<"(\\(.+\\))+">(s)) {
+            if (s.empty()) {
+                continue;
+            }
+
+            if (!prev.has_value()) {
+                throw std::invalid_argument("Invalid format given");
+            }
+            prev->second.emplace_back(s.data() + 1, s.length() - 2);
+            continue;
+        }
+
+        string name = *(s | views::split('/') | views::drop(1) | views::take(1)
                         | views::transform(
                           [](auto&& ss) { return trim(std::string_view(ss)); }))
                          .begin();
 
-        res.push_back(name);
+        std::pair<string, std::vector<string>> p(name, {});
+        res.push_back(p);
+        prev = res.back();
     }
+
     return res;
 }
 
-void parse(string file_path)
+}  // namespace
+
+std::vector<std::unordered_map<std::string, std::string>> parse_gcc_wpa(
+  std::string_view file_path)
 {
     std::ifstream file;
     file.open(file_path);
@@ -168,19 +198,10 @@ void parse(string file_path)
     }
 
     file.close();
-    // for (auto& e : raw_entries) {
-    //     std::println("Entry:");
-    //     for (auto&& s :
-    //          e | views::split('\n') | rng::to<std::vector<string>>()) {
-    //         std::println("{}", s);
-    //     }
-    //     std::println("\n");
-    // }
 
     std::vector<std::unordered_map<string, string>> table_entries;
     auto fn_name_re = ctre::search<".+[0-9]+">;
     for (auto& raw_entry : raw_entries) {
-        std::println("\nNEW ENTRY\n");
         if (raw_entry.length() == 0 || is_whitespace(raw_entry)) {
             continue;
         }
@@ -198,19 +219,18 @@ void parse(string file_path)
         if (!rng::search(first_line, "__gxx_personality"sv).empty()) {
             continue;
         }
+
         // TODO: Use rng::enumerate when clang is updated
         for (size_t i = 0; i < split_vec.size(); i++) {
             auto& entry = split_vec[i];
             if (i == 0) {
                 auto m = fn_name_re.search(entry);
-                // std::println("entry:{}", entry);
 
                 auto iter = m.get<0>().to_view() | views::split('/')
                             | views::transform([](auto&& s) {
                                   return trim(std::string_view(s));
                               });
-                // Find a better way to do this, std::next nor std::advanced
-                // work as well nor did it++
+
                 auto fn_name = *iter.begin();
                 parsed_entry["fn_name"] = fn_name;
                 parsed_entry["id"] = *(iter | views::drop(1)).begin();
@@ -219,14 +239,9 @@ void parse(string file_path)
                     | views::drop(1) | views::reverse | views::drop(1)
                     | views::reverse;
 
-                // *sigh* C++ needs a collect method
                 parsed_entry["demangled_name"] = string(
                   demangle_name_iter.begin(), demangle_name_iter.end());
 
-                std::println("fn_name: {}, id: {}, demangled_name: {}",
-                             parsed_entry["fn_name"],
-                             parsed_entry["id"],
-                             parsed_entry["demangled_name"]);
                 continue;
             }
 
@@ -247,36 +262,69 @@ void parse(string file_path)
             }) | rng::to<string>();
             rng::replace(key, ' ', '_');
             string value = trim(*(kv_iter | views::drop(1)).begin());
-            std::println("{}: {}", key, value);
             parsed_entry[key] = value;
         }
         table_entries.push_back(parsed_entry);
     }
 
+    return table_entries;
+}
+
+// Can throw: (https://en.cppreference.com/w/cpp/string/basic_string/stoul),
+// bad_optional_access, should never be null
+CallGraph parse_gcc_callgraph(
+  std::vector<std::unordered_map<std::string, std::string>> p_parsed_table)
+{
     // Create all nodes
-    std::unordered_map<std::string_view, Node> all_nodes;
+    CallGraph graph;
+    auto& table_entries = p_parsed_table;
+    auto& all_nodes = graph.m_nodes;
     for (auto& entry : table_entries) {
-        Node n = { std::stoi(entry["id"]),  entry["fn_name"],
-                   entry["demangled_name"], entry["visablity"],
-                   entry["avaliablity"],    entry["function_flags"] };
-        all_nodes.emplace(entry["fn_name"], n);
+        // Convert string id to numeric key before emplacing.
+        size_t uid = static_cast<size_t>(std::stoul(entry["id"]));
+        auto n = std::make_shared<CallGraphNode>(
+          NodeArgs{ .p_nid = static_cast<size_t>(uid),
+                    .p_fn_name = entry["fn_name"],
+                    .p_demangled_name = entry["demangled_name"],
+                    .p_visibility = entry["visablity"],
+                    .p_avaliablity = entry["avaliablity"],
+                    .p_flags = entry["function_flags"],
+                    .p_graph = graph });
+
+        all_nodes.emplace(uid, n);
     }
 
     // Create Edges
     for (auto& entry : table_entries) {
-        std::string_view name = entry["fn_name"];
-        if (!all_nodes.contains(name)) {
+        size_t id = std::stoi(entry["id"]);
+        if (!all_nodes.contains(id)) {
             continue;
         }
-        auto caller_strs = parse_fn_list(entry["called_by"]);
-        auto callee_strs = parse_fn_list(entry["calls"]);
+        auto caller_pairs = parse_fn_list(entry["called_by"]);
+        auto callee_pairs = parse_fn_list(entry["calls"]);
 
-        auto get_node = [&all_nodes](std::string_view name) -> Node& {
-            return all_nodes.at(name);
-        };
+        auto n = all_nodes.at(id);
 
-        Node& n = get_node(name);
-        n.callers = caller_strs | views::transform(get_node)
-                    | rng::to<std::vector<Node>>();
+        // Callers
+        for (const auto& [node_id_str, attribs] : caller_pairs) {
+            size_t const node_id = std::stoul(node_id_str);
+            auto nn = graph.get_node_from_id(node_id).value();
+            n->callers.emplace_back(nn->id, attribs);
+        }
+
+        // Callees
+        for (const auto& [node_id_str, attribs] : callee_pairs) {
+            size_t const node_id = std::stoul(node_id_str);
+            auto nn = graph.get_node_from_id(node_id).value();
+            n->callees.emplace_back(nn->id, attribs);
+
+            if (nn->fn_name == "__cxa_throw") {
+                graph.m_throw_callers.emplace_back(n);
+            }
+        }
     }
+
+    return graph;
 }
+
+}  // namespace safe

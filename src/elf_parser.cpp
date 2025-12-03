@@ -51,7 +51,7 @@ ElfParser::ElfParser(std::string_view p_file_name)
     std::println("{} {}-bit ELF object\n",
                  m_file_name,
                  m_elf_class == ELFCLASS32 ? 32 : 64);
-                 
+
     m_load_elf_header();
     m_load_section_header();
     m_load_program_header();
@@ -91,8 +91,8 @@ void ElfParser::m_load_section_header()
     Elf_Scn* section = nullptr;
     GElf_Shdr current_section_header;
     while ((section = elf_nextscn(m_elf, section)) != NULL) {
-        if (gelf_getshdr(section, &current_section_header) !=
-            &current_section_header) {
+        if (gelf_getshdr(section, &current_section_header)
+            != &current_section_header) {
             std::println(
               stderr,
               "Error (load_section_header): Unable to get section header: {}.",
@@ -100,10 +100,9 @@ void ElfParser::m_load_section_header()
             continue;
         }
 
-        if ((section_name = elf_strptr(m_elf,
-                                       m_elf_header.e_shstrndx,
-                                       current_section_header.sh_name)) ==
-            NULL) {
+        if ((section_name = elf_strptr(
+               m_elf, m_elf_header.e_shstrndx, current_section_header.sh_name))
+            == NULL) {
             std::println(
               stderr,
               "Error (load_section_header): Unable to get section name: {}.",
@@ -130,8 +129,8 @@ void ElfParser::m_load_section_header()
         } else {
             std::vector<std::byte> parsed_data(
               reinterpret_cast<const std::byte*>(section_data->d_buf),
-              reinterpret_cast<const std::byte*>(section_data->d_buf) +
-                section_data->d_size);
+              reinterpret_cast<const std::byte*>(section_data->d_buf)
+                + section_data->d_size);
             current_section_data = parsed_data;
         }
         current_section.data = current_section_data;
@@ -140,13 +139,14 @@ void ElfParser::m_load_section_header()
     }
 }
 
-void ElfParser::m_load_symbol_table(){
+void ElfParser::m_load_symbol_table()
+{
     if (m_sections.find(".symtab") == m_sections.end()) {
-        return; 
+        return;
     }
 
     if (m_sections.find(".strtab") == m_sections.end()) {
-        return; 
+        return;
     }
 
     const GElf_Shdr& symtab_hdr = m_sections[".symtab"].header;
@@ -156,18 +156,16 @@ void ElfParser::m_load_symbol_table(){
 
     for (size_t i = 0; i < symtab_count; i++) {
         const GElf_Sym* sym = reinterpret_cast<const GElf_Sym*>(
-            symtab_data.data() + (i * symtab_hdr.sh_entsize)
-        );
-        
-        const char* name = reinterpret_cast<const char*>(
-            strtab_data.data() + sym->st_name
-        );
-        
+          symtab_data.data() + (i * symtab_hdr.sh_entsize));
+
+        const char* name
+          = reinterpret_cast<const char*>(strtab_data.data() + sym->st_name);
+
         if (sym->st_name == 0) {
             name = "";
         }
 
-        symbol_s symbol = {name, sym->st_value, sym->st_info};
+        symbol_s symbol = { name, sym->st_value, sym->st_info };
         m_symbol_table.emplace_back(symbol);
     }
 }
@@ -183,8 +181,8 @@ void ElfParser::m_load_program_header()
     } else {
         GElf_Phdr current_program_header;
         for (int i = 0; i < m_elf_header.e_phnum; i++) {
-            if (gelf_getphdr(m_elf, i, &current_program_header) !=
-                &current_program_header) {
+            if (gelf_getphdr(m_elf, i, &current_program_header)
+                != &current_program_header) {
                 std::println(
                   stderr,
                   "Error (Load_program_header): Unable to get program "
@@ -206,29 +204,33 @@ std::expected<GElf_Ehdr, elf_parser_error> ElfParser::get_elf_header()
     }
 }
 
-std::expected<section_s, elf_parser_error> ElfParser::get_section(std::string_view p_section)
+std::expected<section_s, elf_parser_error> ElfParser::get_section(
+  std::string_view p_section)
 {
-    if(m_sections.empty()){
+    if (m_sections.empty()) {
         return std::unexpected(elf_parser_error::EMPTY_SECTION);
-    }  
+    }
 
-    if(!m_sections.contains(p_section)){
+    if (!m_sections.contains(p_section)) {
         return std::unexpected(elf_parser_error::SECTION_NOT_FOUND);
     }
 
     return m_sections[p_section];
 }
 
-std::expected<std::span<GElf_Phdr>, elf_parser_error> ElfParser::get_program_header()
+std::expected<std::span<GElf_Phdr>, elf_parser_error>
+ElfParser::get_program_header()
 {
-    if(m_program_header.empty()){
+    if (m_program_header.empty()) {
         return std::unexpected(elf_parser_error::EMPTY_PROGRAM);
-    } 
+    }
     return m_program_header;
 }
 
-std::expected<std::span<symbol_s>, elf_parser_error> ElfParser::get_symbol_table(){
-    if(m_symbol_table.empty()){
+std::expected<std::span<symbol_s>, elf_parser_error>
+ElfParser::get_symbol_table()
+{
+    if (m_symbol_table.empty()) {
         return std::unexpected(elf_parser_error::EMPTY_SYMBOL);
     }
     return m_symbol_table;
