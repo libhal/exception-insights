@@ -1,4 +1,3 @@
-#include <elf.h>
 #include <gelf.h>
 #include <libelf.h>
 
@@ -8,8 +7,7 @@
 
 #include "elf_parser.hpp"
 
-void elf_parser_tests()
-{
+boost::ut::suite<"Elf_Parser_Test"> elf_parser_test = [] {
     using namespace boost::ut;
 
     "Elf_Parser"_test = [] {

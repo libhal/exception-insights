@@ -10,6 +10,7 @@
  **/
 
 #include "elf_parser.hpp"
+#include <system_error>
 
 ElfParser::ElfParser(std::string_view p_file_name)
   : m_file_name(p_file_name)
