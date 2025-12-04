@@ -10,6 +10,8 @@
  **/
 
 #include "elf_parser.hpp"
+#include <cstddef>
+#include <system_error>
 
 ElfParser::ElfParser(std::string_view p_file_name)
   : m_file_name(p_file_name)
@@ -99,10 +101,9 @@ void ElfParser::m_load_section_header()
               elf_errmsg(-1));
             continue;
         }
-
-        if ((section_name = elf_strptr(
-               m_elf, m_elf_header.e_shstrndx, current_section_header.sh_name))
-            == NULL) {
+        section_name = elf_strptr(
+          m_elf, m_elf_header.e_shstrndx, current_section_header.sh_name);
+        if (section_name == nullptr) {
             std::println(
               stderr,
               "Error (load_section_header): Unable to get section name: {}.",

@@ -1,4 +1,4 @@
-#include <elf.h>
+#include <array>
 #include <gelf.h>
 #include <libelf.h>
 
@@ -8,8 +8,7 @@
 
 #include "elf_parser.hpp"
 
-void elf_parser_tests()
-{
+boost::ut::suite<"Elf_Parser_Test"> elf_parser_test = [] {
     using namespace boost::ut;
 
     "Elf_Parser"_test = [] {
@@ -17,7 +16,8 @@ void elf_parser_tests()
         using namespace boost::ut;
         "Validate the Elf Header"_test = [test_file]() {
             ElfParser elf(test_file);
-            unsigned char elf_magic_number[4] = { 0x7F, 'E', 'L', 'F' };
+            std::array<unsigned char, 4> elf_magic_number
+              = { 0x7F, 'E', 'L', 'F' };
             GElf_Ehdr ehdr = elf.get_elf_header().value();
 
             for (int i = 0; i < 4; i++) {
