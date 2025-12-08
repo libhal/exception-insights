@@ -33,7 +33,7 @@ ElfParser::ElfParser(std::string_view p_file_name)
               errno, std::generic_category(), "Open failed.");
         }
     } catch (const std::system_error& e) {
-        std::println(stderr, "Error opening {}: {}", m_file_name, e.what());
+        std::println(stderr, "Error opening file: {}\n{}", m_file_name, e.what());
         exit(EXIT_FAILURE);
     }
 

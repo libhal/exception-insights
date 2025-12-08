@@ -5,14 +5,21 @@
 #include <boost/ut.hpp>
 
 #include <string_view>
+#include <filesystem>
 
 #include "elf_parser.hpp"
 
 boost::ut::suite<"Elf_Parser_Test"> elf_parser_test = [] {
     using namespace boost::ut;
+#if defined(__unix__) || defined(__APPLE__)
+    std::system("cd ../../testing_programs/ && ./generate_and_build.sh");
+#elif defined(_WIN32)
+    std::system("cd ../../testing_programs/ && ./generate_and_build.ps1");
+#endif
 
     "Elf_Parser"_test = [] {
-        std::string_view test_file = "../../testing_programs/elf_test";
+        std::string_view test_file = "../../testing_programs/build/demo_class";
+
         using namespace boost::ut;
         "Validate the Elf Header"_test = [test_file]() {
             ElfParser elf(test_file);
