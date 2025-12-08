@@ -47,8 +47,11 @@ struct symbol_s
 {
     std::string_view name;  //!< Symbol name from string table
     std::variant<uint32_t, uint64_t>
-      value;             //!< Symbol value (address or constant)
-    unsigned char info;  //!< Symbol type and binding attributes
+      value;  //!< Symbol value (address or constant)
+    std::variant<uint32_t, uint64_t> size;  //!< Symbol size
+    unsigned char info;   //!< Symbol type and binding attributes
+    unsigned char other;  //!< Symbol type and binding attributes
+    uint16_t shndx;       //!< Symbol type and binding attributes
 };
 
 /**
