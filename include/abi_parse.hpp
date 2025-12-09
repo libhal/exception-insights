@@ -27,10 +27,11 @@ struct CallSite
 // action within call site table
 struct Action
 {
-    int64_t type;          // index type
-    int64_t next_offset;   // next action in list
-    int64_t entry_offset;  // offset to next action
-    int64_t next_index;    // index of next action
+    int64_t type;               // index type
+    int64_t next_offset;        // next action in list
+    int64_t entry_offset;       // offset to next action
+    int64_t next_index;         // index of next action
+    int64_t next_field_offset;  // offset of next action field
 };
 enum class HandlerType
 {
@@ -59,7 +60,6 @@ class GccParser
     explicit GccParser(const std::vector<std::byte>& lsda_data);
     explicit GccParser(const std::vector<uint8_t>& lsda_data);
 
-
     std::optional<uint64_t> resolve_type(int64_t type_index) const;
     void print_call_sites(const std::string& filename) const;
     void print_actions(const std::string& filename) const;
@@ -67,9 +67,19 @@ class GccParser
     std::vector<CallSite> call_sites;  // parsed call site records
     std::vector<Action> actions;       // parsed action records
     std::vector<uint64_t> type_table;  // parsed type table entries
-    std::vector<Scope> get_scopes() const
+    const std::vector<Scope> get_scopes() const noexcept
     {
         return scopes;
+    }
+
+    const std::vector<CallSite>& get_call_sites() const noexcept
+    {
+        return call_sites;
+    }
+
+    const std::vector<Action>& get_actions() const noexcept
+    {
+        return actions;
     }
 
   private:
