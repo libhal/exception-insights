@@ -48,6 +48,7 @@ libhal_unit_test(SOURCES
     tests/main.test.cpp
     tests/elf_parser.test.cpp
     tests/gcc_callgraph.test.cpp
+    tests/validator.test.cpp
 
     src/elf_parser.cpp
     src/gcc_parse.cpp
