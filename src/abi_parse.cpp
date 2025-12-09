@@ -91,8 +91,13 @@ void GccParser::build_scopes()
         }
 
         if (action_index < 0) {
-            throw std::runtime_error("invalid LSDA: call-site action offset "
-                                     "not found in action table");
+            std::cerr
+              << "[AbiParser] warning: call-site action offset "
+              << action_offset
+              << " not found in action table – treating call-site as having "
+                 "no handlers\n";
+            scopes.push_back(std::move(s));
+            continue;  // go on to the next call-site
         }
 
         // Follow action chain using resolved next_index
@@ -131,7 +136,7 @@ GccParser::GccParser(const std::vector<std::byte>& lsda_data)
 
 GccParser::GccParser(const std::vector<uint8_t>& lsda_data)
 {
-    data = lsda_data;      // copy into owned storage
+    data = lsda_data;  // copy into owned storage
     parse();
 }
 
@@ -182,9 +187,9 @@ uint64_t GccParser::r_encode(uint8_t encoding, uint64_t pcrel)
         return 0;  // omitted
     }
 
-    const bool indirect = (encoding & 0x80) != 0;  // indirection flag
-    const uint8_t app = (encoding & 0x70);         // application
-    const uint8_t form = (encoding & 0x0F);        // representation
+    // const bool indirect = (encoding & 0x80) != 0;  // indirection flag
+    const uint8_t app = (encoding & 0x70);   // application
+    const uint8_t form = (encoding & 0x0F);  // representation
 
     uint64_t value = 0;
 
@@ -217,9 +222,9 @@ uint64_t GccParser::r_encode(uint8_t encoding, uint64_t pcrel)
             throw std::runtime_error("unsupported DW_EH_PE form");
     }
 
-    if (indirect) {
-        throw std::runtime_error("indirect doesn't support raw LSDA");
-    }
+    // if (indirect) {
+    //     throw std::runtime_error("indirect doesn't support raw LSDA");
+    // }
 
     if (app == 0x10) {
         value += pcrel;
@@ -274,16 +279,30 @@ void GccParser::parse()
             throw std::runtime_error("type table start beyond LSDA size");
         }
 
-        // Type table starts at tt_start and runs to end of LSDA
         index = tt_start;
         while (index < data.size()) {
-            // r_encode advances index according to tt_enc
-            uint64_t type_addr = r_encode(tt_enc, 0);
-            type_table.push_back(type_addr);
+            size_t before = index;
+            try {
+                uint64_t type_addr = r_encode(tt_enc, 0);
+                // sanity: r_encode must advance index
+                if (index <= before) {
+                    std::cerr << "[AbiParser] warning: type table decode made "
+                                 "no progress; "
+                                 "aborting type table parsing\n";
+                    break;
+                }
+                type_table.push_back(type_addr);
+            } catch (const std::runtime_error& e) {
+                std::cerr
+                  << "[AbiParser] warning: type table appears truncated: "
+                  << e.what() << "\n";
+                // stop reading types, but keep whatever we already parsed
+                break;
+            }
         }
     }
 
-    // Build high-level scopes from call sites + actions
+    // build scopes from call sites + actions
     build_scopes();
 }
 
@@ -294,7 +313,6 @@ std::optional<uint64_t> GccParser::resolve_type(int64_t type_index) const
         return std::nullopt;
     }
 
-    // Itanium: 1-based, reversed indexing into the type table
     const size_t n = type_table.size();
     const size_t idx = static_cast<size_t>(type_index);
 
@@ -356,10 +374,18 @@ void GccParser::parse_actions_tail(size_t table_start, size_t limit_end)
             throw std::runtime_error(
               "malformed action table odd sleb128 count");
         }
+
+        // location of the 'next' field
+        const size_t next_field_pos = index;
+        a.next_field_offset
+          = static_cast<int64_t>(next_field_pos - table_start);
+
+        // read next_offset (signed, can be negative)
         a.next_offset = read_sleb128(data, index);
         if (index > limit_end) {
             throw std::runtime_error("action parsing went over limit");
         }
+
         a.next_index = -1;
         actions.push_back(a);
     }
@@ -369,11 +395,11 @@ void GccParser::parse_actions_tail(size_t table_start, size_t limit_end)
         Action& a = actions[i];
 
         if (a.next_offset == 0) {
-            a.next_index = -1;  // no next action in chain
+            a.next_index = -1;  // end of chain
             continue;
         }
 
-        const int64_t target_offset = a.entry_offset + a.next_offset;
+        const int64_t target_offset = a.next_field_offset + a.next_offset;
 
         int64_t found = -1;
         for (size_t j = 0; j < actions.size(); ++j) {
@@ -388,11 +414,13 @@ void GccParser::parse_actions_tail(size_t table_start, size_t limit_end)
             // techdebt: handle cross LSDA/shared-tail action chains when we
             // parse full .gcc_except_table sections instead of single LSDAs.
             std::cerr << "[AbiParser] warning: next_offset from entry_offset="
-                    << a.entry_offset << " points to unknown target_offset="
-                    << target_offset << " – truncating action chain\n";
+                      << a.entry_offset
+                      << " points to unknown target_offset=" << target_offset
+                      << " – truncating action chain\n";
             a.next_index = -1;
             continue;
         }
+
         a.next_index = found;
     }
 }
