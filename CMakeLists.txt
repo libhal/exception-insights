@@ -14,7 +14,8 @@ find_package(libelf REQUIRED)
 
 # Create the executable target
 add_executable(${PROJECT_NAME} src/main.cpp src/elf_parser.cpp 
-                               src/gcc_parse.cpp src/abi_parse.cpp)
+                               src/gcc_parse.cpp src/abi_parse.cpp
+                               src/validator.cpp)
 
 #Linking Libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC ctre::ctre libelf::libelf)
@@ -48,10 +49,12 @@ libhal_unit_test(SOURCES
     tests/main.test.cpp
     tests/elf_parser.test.cpp
     tests/gcc_callgraph.test.cpp
+    tests/validator.test.cpp
 
     src/elf_parser.cpp
     src/gcc_parse.cpp
     src/abi_parse.cpp
+    src/validator.cpp
 
     PACKAGES
     tl-function-ref

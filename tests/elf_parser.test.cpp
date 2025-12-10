@@ -97,11 +97,11 @@ boost::ut::suite<"Elf_Parser_Test"> elf_parser_test = [] {
               << "main should have global binding";
 
 
-            uint64_t address = std::get<uint64_t>(main_symbol.value);
+            uint64_t address = main_symbol.value;
             expect(address > 0_u) << "main dddress should be non-zero";
 
 
-            uint64_t size = std::get<uint64_t>(main_symbol.size);
+            uint64_t size = main_symbol.size;
             expect(size == 121) << "main size should be 121";
         };
     };

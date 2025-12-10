@@ -1,0 +1,241 @@
+===================================
+RTTI Address | Demangled Throw Name
+===================================
+   5014240   | typeinfo for char16_t const*
+   5014464   | typeinfo for wchar_t
+   4843352   | typeinfo name for _Float128*
+   5014144   | typeinfo for char
+   4843208   | typeinfo name for __float128 const*
+   5014064   | typeinfo for signed char
+   5013312   | typeinfo for unsigned long long*
+   4843576   | typeinfo name for signed char
+   5013680   | typeinfo for int const*
+   4843528   | typeinfo name for unsigned int*
+   5012864   | typeinfo for _Float32
+   4843501   | typeinfo name for long long*
+   4844000   | typeinfo name for std::overflow_error
+   5014224   | typeinfo for char32_t
+   4843247   | typeinfo name for decimal64 const*
+   4843510   | typeinfo name for unsigned long*
+   4843744   | typeinfo name for __cxxabiv1::__si_class_type_info
+   4843611   | typeinfo name for char8_t const*
+   5012832   | typeinfo for _Float32*
+   5015120   | typeinfo for std::underflow_error
+   5012432   | typeinfo for std::nullptr_t*
+   4843376   | typeinfo name for _Float64*
+   4843531   | typeinfo name for unsigned int
+   4843680   | typeinfo name for __cxxabiv1::__pointer_type_info
+   4843920   | typeinfo name for std::out_of_range
+   5015632   | typeinfo for std::bad_cast
+   4843592   | typeinfo name for char32_t*
+   4843639   | typeinfo name for bool
+   4843578   | typeinfo name for char const*
+   4843632   | typeinfo name for bool const*
+   4843488   | typeinfo name for unsigned long long const*
+   5012112   | typeinfo for __int128*
+   5013760   | typeinfo for unsigned short const*
+   4843573   | typeinfo name for signed char*
+   5012032   | typeinfo for unsigned __int128*
+   5012000   | typeinfo for unsigned __int128 const*
+   4843641   | typeinfo name for void const*
+   5014480   | typeinfo for bool const*
+   4843515   | typeinfo name for long const*
+   5013552   | typeinfo for long*
+   5013824   | typeinfo for unsigned short
+   4843645   | typeinfo name for void*
+   4843221   | typeinfo name for unsigned __int128*
+   4843226   | typeinfo name for __int128 const*
+   4846176   | typeinfo name for __cxxabiv1::__pointer_to_member_type_info
+   5014592   | typeinfo for void*
+   4842944   | typeinfo name for __gnu_cxx::__concurrence_unlock_error
+   5015872   | typeinfo for __cxxabiv1::__pbase_type_info
+   5014544   | typeinfo for bool
+   4843587   | typeinfo name for char32_t const*
+   4843336   | typeinfo name for _Float128 const*
+   5013520   | typeinfo for long const*
+   5015024   | typeinfo for std::out_of_range
+   4844512   | typeinfo name for std::bad_array_new_length
+   5012400   | typeinfo for std::nullptr_t const*
+   4843546   | typeinfo name for unsigned short*
+   4843383   | typeinfo name for _Float64
+   5012752   | typeinfo for _Float64*
+   5012304   | typeinfo for decimal64
+   4843470   | typeinfo name for double const*
+   4843856   | typeinfo name for std::invalid_argument
+   4843506   | typeinfo name for unsigned long const*
+   5014192   | typeinfo for char32_t*
+   5012944   | typeinfo for _Float16
+   5011496   | typeinfo for __gnu_cxx::__concurrence_unlock_error
+   5015504   | typeinfo for std::bad_alloc
+   5013232   | typeinfo for float*
+   5012272   | typeinfo for decimal64*
+   4843620   | typeinfo name for char8_t
+   4843492   | typeinfo name for unsigned long long*
+   4843533   | typeinfo name for int const*
+   5014512   | typeinfo for bool*
+   5013344   | typeinfo for unsigned long long
+   5012160   | typeinfo for decimal128 const*
+   4843400   | typeinfo name for _Float32*
+   5012672   | typeinfo for _Float128*
+   5013200   | typeinfo for float const*
+   5013152   | typeinfo for double*
+   4843558   | typeinfo name for short
+   4843276   | typeinfo name for std::nullptr_t*
+   5011920   | typeinfo for __float128 const*
+   4843537   | typeinfo name for int*
+   4843483   | typeinfo name for float*
+   5014400   | typeinfo for wchar_t const*
+   4843474   | typeinfo name for double*
+   4843264   | typeinfo name for decimal32*
+   4844576   | typeinfo name for __cxxabiv1::__class_type_info
+   5013424   | typeinfo for long long
+   4843627   | typeinfo name for wchar_t*
+   5011600   | typeinfo for std::exception
+   4843256   | typeinfo name for decimal64
+   4843259   | typeinfo name for decimal32 const*
+   4843513   | typeinfo name for unsigned long
+   5013712   | typeinfo for int*
+   4843824   | typeinfo name for std::domain_error
+   4843604   | typeinfo name for char16_t*
+   5013264   | typeinfo for float
+   4843519   | typeinfo name for long*
+   4843599   | typeinfo name for char16_t const*
+   5013872   | typeinfo for short*
+   4843608   | typeinfo name for char16_t
+   4843497   | typeinfo name for long long const*
+   4843416   | typeinfo name for _Float16 const*
+   5012800   | typeinfo for _Float32 const*
+   4843268   | typeinfo name for decimal32
+   4843585   | typeinfo name for char
+   4843524   | typeinfo name for unsigned int const*
+   5013472   | typeinfo for unsigned long*
+   5015048   | typeinfo for std::runtime_error
+   5012880   | typeinfo for _Float16 const*
+   4843008   | typeinfo name for std::bad_exception
+   4843567   | typeinfo name for unsigned char
+   5012784   | typeinfo for _Float64
+   5014928   | typeinfo for std::logic_error
+   4843784   | typeinfo name for std::type_info
+   4843636   | typeinfo name for bool*
+   5014304   | typeinfo for char16_t
+   5013952   | typeinfo for unsigned char*
+   5014432   | typeinfo for wchar_t*
+   5015696   | typeinfo for std::bad_typeid
+   4844488   | typeinfo name for std::bad_alloc
+   5012064   | typeinfo for unsigned __int128
+   5011472   | typeinfo for __gnu_cxx::__concurrence_lock_error
+   5013984   | typeinfo for unsigned char
+   5013360   | typeinfo for long long const*
+   5013664   | typeinfo for unsigned int
+   5013184   | typeinfo for double
+   4843280   | typeinfo name for std::nullptr_t
+   5013600   | typeinfo for unsigned int const*
+   5011832   | typeinfo for __cxxabiv1::__fundamental_type_info
+   4843407   | typeinfo name for _Float32
+   4844032   | typeinfo name for std::underflow_error
+   4843271   | typeinfo name for std::nullptr_t const*
+   5011656   | typeinfo for __cxxabiv1::__foreign_exception
+   4843479   | typeinfo name for float const*
+   4843569   | typeinfo name for signed char const*
+   4843616   | typeinfo name for char8_t*
+   4843984   | typeinfo name for std::range_error
+   5014952   | typeinfo for std::domain_error
+   4844544   | typeinfo name for std::bad_cast
+   5015096   | typeinfo for std::overflow_error
+   4843212   | typeinfo name for __float128*
+   5012352   | typeinfo for decimal32*
+   5013744   | typeinfo for int
+   5015000   | typeinfo for std::length_error
+   5013280   | typeinfo for unsigned long long const*
+   5014352   | typeinfo for char8_t*
+   4843952   | typeinfo name for std::runtime_error
+   4843468   | typeinfo name for long double
+   5013104   | typeinfo for long double
+   4843486   | typeinfo name for float
+   5012144   | typeinfo for __int128
+   5014080   | typeinfo for char const*
+   5013440   | typeinfo for unsigned long const*
+   4842880   | typeinfo name for __gnu_cxx::__concurrence_lock_error
+   5015760   | typeinfo for __cxxabiv1::__class_type_info
+   5012912   | typeinfo for _Float16*
+   5014160   | typeinfo for char32_t const*
+   5015568   | typeinfo for std::bad_array_new_length
+   5013040   | typeinfo for long double const*
+   4843596   | typeinfo name for char32_t
+   5012704   | typeinfo for _Float128
+   5013840   | typeinfo for short const*
+   5012080   | typeinfo for __int128 const*
+   5014112   | typeinfo for char*
+   5012464   | typeinfo for std::nullptr_t
+   4843431   | typeinfo name for _Float16
+   5012384   | typeinfo for decimal32
+   4843630   | typeinfo name for wchar_t
+   4843465   | typeinfo name for long double*
+   4843582   | typeinfo name for char*
+   5012320   | typeinfo for decimal32 const*
+   4843235   | typeinfo name for decimal128 const*
+   4843230   | typeinfo name for __int128*
+   4843808   | typeinfo name for std::logic_error
+   5015072   | typeinfo for std::range_error
+   4843224   | typeinfo name for unsigned __int128
+   5013504   | typeinfo for unsigned long
+   5011640   | typeinfo for __cxxabiv1::__forced_unwind
+   5015968   | typeinfo for __cxxabiv1::__pointer_to_member_type_info
+   5014320   | typeinfo for char8_t const*
+   4843244   | typeinfo name for decimal128
+   5014000   | typeinfo for signed char const*
+   4843072   | typeinfo name for __cxxabiv1::__foreign_exception
+   5014384   | typeinfo for char8_t
+   5013632   | typeinfo for unsigned int*
+   4843240   | typeinfo name for decimal128*
+   4843560   | typeinfo name for unsigned char const*
+   5014560   | typeinfo for void const*
+   4843424   | typeinfo name for _Float16*
+   4843461   | typeinfo name for long double const*
+   4843888   | typeinfo name for std::length_error
+   4843648   | typeinfo name for void
+   4843549   | typeinfo name for unsigned short
+   5013792   | typeinfo for unsigned short*
+   5013120   | typeinfo for double const*
+   5014736   | typeinfo for __cxxabiv1::__si_class_type_info
+   5013920   | typeinfo for unsigned char const*
+   4843540   | typeinfo name for int
+   4843233   | typeinfo name for __int128
+   4843495   | typeinfo name for unsigned long long
+   4846112   | typeinfo name for __cxxabiv1::__pbase_type_info
+   5011952   | typeinfo for __float128*
+   4843522   | typeinfo name for long
+   5014624   | typeinfo for void
+   4843555   | typeinfo name for short*
+   4843360   | typeinfo name for _Float128
+   5011984   | typeinfo for __float128
+   5012640   | typeinfo for _Float128 const*
+   4843477   | typeinfo name for double
+   5013584   | typeinfo for long
+   4843252   | typeinfo name for decimal64*
+   5011616   | typeinfo for std::bad_exception
+   5012192   | typeinfo for decimal128*
+   5013392   | typeinfo for long long*
+   5014848   | typeinfo for std::type_info
+   5013072   | typeinfo for long double*
+   4842992   | typeinfo name for std::exception
+   4844560   | typeinfo name for std::bad_typeid
+   5012224   | typeinfo for decimal128
+   5012720   | typeinfo for _Float64 const*
+   4843504   | typeinfo name for long long
+   5013904   | typeinfo for short
+   5014032   | typeinfo for signed char*
+   4843623   | typeinfo name for wchar_t const*
+   4843368   | typeinfo name for _Float64 const*
+   5014272   | typeinfo for char16_t*
+   5012240   | typeinfo for decimal64 const*
+   4843217   | typeinfo name for unsigned __int128 const*
+   4843168   | typeinfo name for __cxxabiv1::__fundamental_type_info
+   4843215   | typeinfo name for __float128
+   5014976   | typeinfo for std::invalid_argument
+   5014640   | typeinfo for __cxxabiv1::__pointer_type_info
+   4843564   | typeinfo name for unsigned char*
+   4843392   | typeinfo name for _Float32 const*
+   4843040   | typeinfo name for __cxxabiv1::__forced_unwind
+   4843551   | typeinfo name for short const*
+   4843542   | typeinfo name for unsigned short const*
