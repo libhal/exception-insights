@@ -16,6 +16,7 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include <unordered_set>
 
 #include "abi_parse.hpp"
 #include "elf_parser.hpp"

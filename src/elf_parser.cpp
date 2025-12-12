@@ -167,8 +167,12 @@ void ElfParser::m_load_symbol_table()
             name = "";
         }
 
-        symbol_s symbol = { name,         sym->st_value, sym->st_size,
-                            sym->st_info, sym->st_other, sym->st_shndx };
+        symbol_s symbol = { name,
+                            static_cast<uint64_t>(sym->st_value),
+                            static_cast<uint64_t>(sym->st_size),
+                            sym->st_info,
+                            sym->st_other,
+                            sym->st_shndx };
         m_symbol_table.emplace_back(symbol);
     }
 }
