@@ -48,8 +48,8 @@ boost::ut::suite<"Validator_Test"> validator_test = [] {
 
             std::println("Thrown objects from _Z3fooi");
             for (auto& obj : throw_obj_foo) {
-                std::string mangled(obj.name);
-                std::string type_name = val.demangle(mangled.c_str());
+                std::string mangled = val.demangle(obj.name.c_str()).value_or(obj.name);
+                std::string type_name = mangled;
                 std::println("  {}", type_name);
                 expect(expected_typeinfo_foo.contains(type_name)) <<
                 "Got: " << type_name << "\n";
@@ -62,8 +62,8 @@ boost::ut::suite<"Validator_Test"> validator_test = [] {
 
             std::println("Thrown objects from _Z3baav");
             for (auto& obj : throw_obj_baa) {
-                std::string mangled(obj.name);
-                std::string type_name = val.demangle(mangled.c_str());
+                std::string mangled = val.demangle(obj.name.c_str()).value_or(obj.name);
+                std::string type_name = mangled;
                 std::println("  {}", type_name);
                 expect(expected_typeinfo_baa.contains(type_name)) <<
                 "Got: " << type_name << "\n";

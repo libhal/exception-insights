@@ -10,9 +10,9 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
-#include <variant>
 #include <vector>
 #include <format>
+#include <filesystem>
 
 #include "elf_parser.hpp"
 #include "gelf.h"
@@ -26,14 +26,15 @@ class Validator
       : m_sym(p_sym)
       , m_text(std::move(p_text))
     {
-        std::ofstream out("../../testing_programs/logs/function_binary.txt");
+        std::filesystem::create_directories("../logs");
+        std::ofstream out("../logs/function_binary.txt");
         out.close();
         collect_rtti_sym();
     }
     ~Validator() = default;
     std::optional<std::vector<symbol_s>> find_typeinfo(
       std::string_view func_name);
-    std::string demangle(const char* mangled);
+    std::optional<std::string> demangle(const char* mangled);
     std::optional<symbol_s> get_symbol(std::string_view name);
 
   private:

@@ -21,10 +21,10 @@ std::optional<std::vector<symbol_s>> Validator::find_typeinfo(
 
     std::vector<symbol_s> thrown_obj;
 
-    std::ofstream out("../../testing_programs/logs/function_binary.txt",
-                      std::ios::app);
+    std::ofstream out("../logs/function_binary.txt", std::ios::app);
     out << std::format("===========================\n");
-    out << std::format("Function: {}\n", demangle(func_name.data()));
+    out << std::format("Function: {}\n",
+                       demangle(func_name.data()).value_or(func_name.data()));
     out << std::format("===========================\n");
 
     for (size_t i = 0; i < func_size - 8; ++i) {
@@ -32,17 +32,19 @@ std::optional<std::vector<symbol_s>> Validator::find_typeinfo(
         int32_t rel_offset = *reinterpret_cast<const int32_t*>(func_start + i);
         uint64_t target_addr = current_addr + 4 + rel_offset;
 
-        out << std::format(
-          "Offset: {:4} | Bytes: {:02x} {:02x} {:02x} {:02x} | Target: 0x{:x}\n",
-          i,
-          static_cast<uint8_t>(func_start[i]),
-          static_cast<uint8_t>(func_start[i + 1]),
-          static_cast<uint8_t>(func_start[i + 2]),
-          static_cast<uint8_t>(func_start[i + 3]),
-          target_addr);
+        out << std::format("Offset: {:4} | Bytes: {:02x} {:02x} {:02x} {:02x} "
+                           "| Target: 0x{:x}\n",
+                           i,
+                           static_cast<uint8_t>(func_start[i]),
+                           static_cast<uint8_t>(func_start[i + 1]),
+                           static_cast<uint8_t>(func_start[i + 2]),
+                           static_cast<uint8_t>(func_start[i + 3]),
+                           target_addr);
 
         if (rtti_sym.contains(target_addr)) {
-            std::string demangled = demangle(rtti_sym[target_addr].name.data());
+            std::string demangled
+              = demangle(rtti_sym[target_addr].name.data())
+                  .value_or(rtti_sym[target_addr].name.data());
             out << std::format(
               "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
               "^^^^^ Throw Found: {}\n",
@@ -56,15 +58,19 @@ std::optional<std::vector<symbol_s>> Validator::find_typeinfo(
 
 void Validator::collect_rtti_sym()
 {
-    std::ofstream out("../../testing_programs/logs/RTTI_typeinfo.txt");
+    std::ofstream out("../logs/RTTI_typeinfo.txt");
     out << std::format("===================================\n");
     out << std::format("RTTI Address | Demangled Throw Name\n");
     out << std::format("===================================\n");
     for (auto& sym : m_sym) {
-        std::string demangle_sym = demangle(sym.name.c_str());
-        if (demangle_sym.starts_with("typeinfo")) {
-            out << std::format("   {}   | {}\n", sym.value, demangle_sym);
-            rtti_sym.emplace(get_symbol(sym.name).value().value, sym);
+        auto demangle_sym = demangle(sym.name.c_str());
+        if (!demangle_sym) {
+            continue;
+        }
+        if (demangle_sym->starts_with("typeinfo")) {
+            out << std::format(
+              "   {}   | {}\n", sym.value, demangle_sym.value());
+            rtti_sym.emplace(sym.value, sym);
         }
     }
     out.close();
@@ -80,7 +86,7 @@ std::optional<symbol_s> Validator::get_symbol(std::string_view name)
     return std::nullopt;
 }
 
-std::string Validator::demangle(const char* mangled)
+std::optional<std::string> Validator::demangle(const char* mangled)
 {
     int status;
     char* demangled = abi::__cxa_demangle(mangled, nullptr, nullptr, &status);
@@ -90,8 +96,7 @@ std::string Validator::demangle(const char* mangled)
         std::free(demangled);
         return result;
     }
-
-    return mangled;
+    return std::nullopt;
 }
 
 }  // namespace safe
