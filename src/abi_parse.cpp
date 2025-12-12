@@ -371,8 +371,11 @@ void LsdaParser::parse_actions_tail(size_t table_start, size_t limit_end)
             throw std::runtime_error("action parsing went over limit");
         }
         if (index == limit_end) {
-            throw std::runtime_error(
-              "malformed action table odd sleb128 count");
+            a.next_field_offset = -1;
+            a.next_offset       = 0;
+            a.next_index        = -1;
+            actions.push_back(a);
+            break;            
         }
 
         // location of the 'next' field

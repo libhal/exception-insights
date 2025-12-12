@@ -1,7 +1,7 @@
 #pragma once
 
 #include "abi_parse.hpp"  // LsdaParser, Scope, ScopeHandler, HandlerType
-#include "validator.hpp"  // symbol_s, Validator
+// #include "validator.hpp"  // symbol_s, Validator
 
 #include <cstdint>
 #include <expected>
@@ -24,11 +24,11 @@ struct CatchRecord
 
 // Relation between a single thrown RTTI symbol and the handlers that can catch
 // it.
-struct ThrowCatchMatch
-{
-    symbol_s thrown;  // RTTI symbol for the thrown type
-    std::vector<const CatchRecord*> handlers;  // matching catch handlers
-};
+// struct ThrowCatchMatch
+// {
+//     symbol_s thrown;  // RTTI symbol for the thrown type
+//     std::vector<const CatchRecord*> handlers;  // matching catch handlers
+// };
 
 class CatchValidator
 {
@@ -42,8 +42,8 @@ class CatchValidator
         TypeResolveFailed,      // LSDA::resolve_type() failed for some index
     };
 
-    using CorrelateResult
-      = std::expected<std::vector<ThrowCatchMatch>, CorrelateError>;
+    // using CorrelateResult
+    //   = std::expected<std::vector<ThrowCatchMatch>, CorrelateError>;
 
     explicit CatchValidator(const LsdaParser& parser);
 
@@ -52,18 +52,18 @@ class CatchValidator
         return m_records;
     }
 
-    // LSDA catch records from this validator
-    CorrelateResult correlate_with_throws(Validator& throw_validator,
-                                          std::string_view func_name) const;
+    // // LSDA catch records from this validator
+    // CorrelateResult correlate_with_throws(Validator& throw_validator,
+    //                                       std::string_view func_name) const;
 
-    // print the correlation or a short error message.
-    void print_throw_catch_report(Validator& throw_validator,
-                                  std::string_view func_name) const;
+    // // print the correlation or a short error message.
+    // void print_throw_catch_report(Validator& throw_validator,
+    //                               std::string_view func_name) const;
 
     void print_records() const;
 
   private:
-    const LsdaParser& m_lsda;
+    // const LsdaParser& m_lsda;
     std::vector<CatchRecord> m_records;
 
     static const char* handler_kind_to_string(HandlerType kind);
