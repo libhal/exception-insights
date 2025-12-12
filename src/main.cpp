@@ -22,7 +22,7 @@
 
 #include "abi_parse.hpp"
 #include "elf_parser.hpp"
-#include "validator_catch.hpp"
+#include "validator.hpp"
 
 /**
  * @enum main_error
@@ -86,10 +86,24 @@ int main(int argc, char* argv[])
 {
     auto args = validate_args(argc, argv);
     if (!args.has_value()) {
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
-    ElfParser elf(args.value().file_name);
+    ElfParser elf(args->file_name);
+
+    auto sym = elf.get_symbol_table();
+    if (!sym.has_value()) {
+        std::print("Failed to get symbol table\n");
+        return EXIT_FAILURE;
+    }
+
+    auto text = elf.get_section(".text");
+    if (!text.has_value()) {
+        std::print("Failed to get .text section\n");
+        return EXIT_FAILURE;
+    }
+
+    safe::Validator val(sym.value(), text.value());
 
     auto gcc_except_table = elf.get_section(".gcc_except_table");
     if (!gcc_except_table.has_value()) {
@@ -100,10 +114,28 @@ int main(int argc, char* argv[])
         if (gcc_except_table.error() == elf_parser_error::SECTION_NOT_FOUND) {
             std::print("Section was not found.\n");
         }
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
-    LsdaParser abi(gcc_except_table.value().data);
+    LsdaParser lsda(gcc_except_table->data);
+
+    // Load LSDA catch table into Validator
+    val.load_lsda(lsda);
+
+    auto res = val.analyze_exceptions("_Z3fooi");
+    if (!res.has_value()) {
+        std::print("analyze_exceptions failed\n");
+        return EXIT_FAILURE;
+    }
+
+    // we print it but we canremove this
+    for (const auto& m : res.value()) {
+        auto dn = val.demangle(m.thrown.name.c_str()).value_or(m.thrown.name);
+        std::print("Thrown: {}\n", dn);
+        for (auto* h : m.handlers) {
+            std::print("  caught by {} type_index={}\n", h->scope_id, h->type_index);
+        }
+    }
 
     return 0;
 }

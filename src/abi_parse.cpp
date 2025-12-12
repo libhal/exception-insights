@@ -74,12 +74,18 @@ void LsdaParser::build_scopes()
         s.end = cs.start + cs.length;
 
         // LSDA: action is a byte offset into the action table (0 = none)
-        if (cs.action == 0) {
+        if (cs.action <= 0) {
+            // landing_pad != 0 means there is a cleanup landing pad
+            ScopeHandler h{};
+            h.type = HandlerType::Cleanup;
+            h.type_index = 0;
+            h.landing_pad = cs.landing_pad;
+            s.handlers.push_back(h);
+
             scopes.push_back(std::move(s));
             continue;
         }
-
-        const int64_t action_offset = cs.action;
+        const int64_t action_offset = cs.action - 1;
 
         // Map offset -> first action index
         int64_t action_index = -1;
@@ -91,13 +97,16 @@ void LsdaParser::build_scopes()
         }
 
         if (action_index < 0) {
-            std::cerr
-              << "[AbiParser] warning: call-site action offset "
-              << action_offset
-              << " not found in action table – treating call-site as having "
-                 "no handlers\n";
+            std::cerr << "... not found ... adding cleanup handler\n";
+
+            ScopeHandler h{};
+            h.type = HandlerType::Cleanup;
+            h.type_index = 0;
+            h.landing_pad = cs.landing_pad;
+            s.handlers.push_back(h);
+
             scopes.push_back(std::move(s));
-            continue;  // go on to the next call-site
+            continue;
         }
 
         // Follow action chain using resolved next_index
@@ -402,7 +411,7 @@ void LsdaParser::parse_actions_tail(size_t table_start, size_t limit_end)
             continue;
         }
 
-        const int64_t target_offset = a.next_field_offset + a.next_offset;
+        const int64_t target_offset = a.entry_offset + a.next_offset;
 
         int64_t found = -1;
         for (size_t j = 0; j < actions.size(); ++j) {
