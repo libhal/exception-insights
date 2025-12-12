@@ -49,11 +49,14 @@ libhal_unit_test(SOURCES
     tests/main.test.cpp
     tests/elf_parser.test.cpp
     tests/gcc_callgraph.test.cpp
+    tests/abi_parser.test.cpp
+    tests/validator_catch.test.cpp
     tests/validator.test.cpp
 
     src/elf_parser.cpp
     src/gcc_parse.cpp
     src/abi_parse.cpp
+    src/validator_catch.cpp
     src/validator.cpp
 
     PACKAGES

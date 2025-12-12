@@ -17,9 +17,12 @@
 #include <tuple>
 #include <vector>
 #include <unordered_set>
+#include <iostream>
+#include <string>
 
 #include "abi_parse.hpp"
 #include "elf_parser.hpp"
+#include "validator_catch.hpp"
 
 /**
  * @enum main_error
@@ -100,7 +103,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    GccParser abi(gcc_except_table.value().data);
+    LsdaParser abi(gcc_except_table.value().data);
 
     return 0;
 }

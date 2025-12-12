@@ -1,43 +1,46 @@
 #include "abi_parse.hpp"
+
+#include <boost/ut.hpp>
+
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-// keep in mind of pathing!!!
-int main(int argc, char** argv)
-{
-    // temporarily reading LSDA file before merging with main
-    const char* path = (argc >= 2 ? argv[1] : "LSDA/lsda");
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        path = "LSDA/lsda";
-        file.open(path, std::ios::binary);
-    }
-    if (!file) {
-        std::cerr << "cannot open LSDA file\n";
-        return 1;
-    }
+boost::ut::suite<"Abi_Parser_Test"> abi_parser_test = [] {
+    using namespace boost::ut;
 
-    std::vector<uint8_t> lsda_data((std::istreambuf_iterator<char>(file)),
-                                   std::istreambuf_iterator<char>());
-    GccParser parser(lsda_data);
+    "basic_lsda_parse"_test = [] {
+        // keep in mind of pathing!!!
+        const char* path = "../../LSDA/lsda";
 
-    try {
-        const auto& call_sites = parser.get_call_sites();
-        const auto& actions = parser.get_actions();
-        const auto& scopes = parser.get_scopes();
+        std::ifstream file(path, std::ios::binary);
+        if (!file) {
+            // this is file path now
+            std::cerr << "cannot open LSDA file at " << path << "\n";
+            expect(false) << "LSDA file not found";
+            return;
+        }
 
-        std::cout << "[Call Sites] count=" << call_sites.size() << "\n";
-        std::cout << "[Actions]    count=" << actions.size() << "\n";
-        std::cout << "[Scopes]     count=" << scopes.size() << "\n";
-        // parser.print_call_sites("LSDA/lsda_output.txt"); // temporary file
-        // output parser.print_actions("LSDA/lsda_output.txt"); // temporary
-        // file output
+        std::vector<std::uint8_t> lsda_data(
+            (std::istreambuf_iterator<char>(file)),
+            std::istreambuf_iterator<char>());
 
-    } catch (const std::exception& e) {
-        std::cerr << "parsing error: " << e.what() << "\n";
-        return 1;
-    }
-    return 0;
-}
+        LsdaParser parser(lsda_data);
+
+        try {
+            const auto& call_sites = parser.get_call_sites();
+            const auto& actions    = parser.get_actions();
+            const auto& scopes     = parser.get_scopes();
+
+            expect(call_sites.size() > 0_u) << "no call sites parsed";
+            expect(actions.size()    > 0_u) << "no actions parsed";
+            expect(scopes.size()     > 0_u) << "no scopes parsed";
+
+        } catch (const std::exception& e) {
+            std::cerr << "parsing error: " << e.what() << "\n";
+            expect(false) << "exception thrown while parsing LSDA";
+        }
+    };
+};
