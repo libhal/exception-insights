@@ -1,43 +1,58 @@
 #include "abi_parse.hpp"
+#include "elf_parser.hpp"
+
+#include <boost/ut.hpp>
+
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-// keep in mind of pathing!!!
-int main(int argc, char** argv)
-{
-    // temporarily reading LSDA file before merging with main
-    const char* path = (argc >= 2 ? argv[1] : "LSDA/lsda");
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        path = "LSDA/lsda";
-        file.open(path, std::ios::binary);
-    }
-    if (!file) {
-        std::cerr << "cannot open LSDA file\n";
-        return 1;
-    }
+boost::ut::suite<"Abi_Parser_Test"> abi_parser_test = [] {
+    using namespace boost::ut;
+#if defined(__unix__) || defined(__APPLE__)
+    // ensure the test binary exists (same pattern as other tests)
+    std::system("cd ../../testing_programs/ && ./generate_and_build.sh");
+#elif defined(_WIN32)
+    std::system("cd ../../testing_programs/ && ./generate_and_build.ps1");
+#endif
 
-    std::vector<uint8_t> lsda_data((std::istreambuf_iterator<char>(file)),
-                                   std::istreambuf_iterator<char>());
-    GccParser parser(lsda_data);
+    "basic_lsda_parse"_test = [] {
+        // keep in mind of pathing!!!
+        const char* bin_path = "../../testing_programs/build/simple";
 
-    try {
-        const auto& call_sites = parser.get_call_sites();
-        const auto& actions = parser.get_actions();
-        const auto& scopes = parser.get_scopes();
 
-        std::cout << "[Call Sites] count=" << call_sites.size() << "\n";
-        std::cout << "[Actions]    count=" << actions.size() << "\n";
-        std::cout << "[Scopes]     count=" << scopes.size() << "\n";
-        // parser.print_call_sites("LSDA/lsda_output.txt"); // temporary file
-        // output parser.print_actions("LSDA/lsda_output.txt"); // temporary
-        // file output
+        ElfParser elf(bin_path);
 
-    } catch (const std::exception& e) {
-        std::cerr << "parsing error: " << e.what() << "\n";
-        return 1;
-    }
-    return 0;
-}
+        auto gcc_except_table = elf.get_section(".gcc_except_table");
+        if (!gcc_except_table.has_value()) {
+            std::cerr << "Failed to get .gcc_except_table section\nReason: ";
+            if (gcc_except_table.error() == elf_parser_error::EMPTY_SECTION) {
+                std::cerr << "Elf parser does not contain sections.\n";
+            }
+            if (gcc_except_table.error()
+                == elf_parser_error::SECTION_NOT_FOUND) {
+                std::cerr << "Section was not found.\n";
+            }
+            expect(false) << "missing .gcc_except_table";
+            return;
+        }
+
+        LsdaParser parser(gcc_except_table.value().data);
+
+        try {
+            const auto& call_sites = parser.get_call_sites();
+            const auto& actions    = parser.get_actions();
+            const auto& scopes     = parser.get_scopes();
+
+            expect(call_sites.size() > 0_u) << "no call sites parsed";
+            expect(actions.size()    > 0_u) << "no actions parsed";
+            expect(scopes.size()     > 0_u) << "no scopes parsed";
+
+        } catch (const std::exception& e) {
+            std::cerr << "parsing error: " << e.what() << "\n";
+            expect(false) << "exception thrown while parsing LSDA";
+        }
+    };
+};

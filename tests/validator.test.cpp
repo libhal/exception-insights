@@ -12,6 +12,7 @@
 #include <string_view>
 #include <vector>
 #include <span>
+#include <unordered_set> 
 
 boost::ut::suite<"Validator_Test"> validator_test = [] {
     using namespace boost::ut;
@@ -68,6 +69,38 @@ boost::ut::suite<"Validator_Test"> validator_test = [] {
                 expect(expected_typeinfo_baa.contains(type_name)) <<
                 "Got: " << type_name << "\n";
             }
+        };
+
+        "Exception correlation"_test = [test_file] {
+            ElfParser elf(test_file);
+
+            auto sym = elf.get_symbol_table();
+            expect(sym.has_value()) << "sym table fail\n";
+
+            auto text = elf.get_section(".text");
+            expect(text.has_value()) << "text fail\n";
+
+            auto gcc_except = elf.get_section(".gcc_except_table");
+            expect(gcc_except.has_value()) << ".gcc_except_table fail\n";
+
+            safe::Validator val(sym.value(), text.value());
+            LsdaParser lsda(gcc_except->data);
+
+            val.load_lsda(lsda);
+
+            auto res = val.analyze_exceptions("_Z3fooi");
+            expect(res.has_value()) << "analyze_exceptions failed\n";
+
+            if (!res.has_value()) {
+                std::println("analyze_exceptions error code = {}", static_cast<int>(res.error()));
+                return;
+            }
+
+            bool any_caught = false;
+            for (const auto& m : res.value()) {
+                if (!m.handlers.empty()) { any_caught = true; break; }
+            }
+            expect(any_caught) << "No thrown types matched any catch handlers\n";
         };
     };
 };

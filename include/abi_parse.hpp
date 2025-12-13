@@ -54,11 +54,11 @@ struct Scope
     std::vector<ScopeHandler> handlers;
 };
 
-class GccParser
+class LsdaParser
 {
   public:
-    explicit GccParser(const std::vector<std::byte>& lsda_data);
-    explicit GccParser(const std::vector<uint8_t>& lsda_data);
+    explicit LsdaParser(const std::vector<std::byte>& lsda_data);
+    explicit LsdaParser(const std::vector<uint8_t>& lsda_data);
 
     std::optional<uint64_t> resolve_type(int64_t type_index) const;
     void print_call_sites(const std::string& filename) const;
