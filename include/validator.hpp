@@ -55,6 +55,9 @@ class Validator
     std::optional<std::string> demangle(const char* mangled);
     std::optional<symbol_s> get_symbol(std::string_view name);
 
+    bool check_thrown_functions(std::string_view func_name);
+    std::vector<symbol_s> find_thrown_functions();
+
     enum class CorrelateError
     {
         NoTypeinfoForFunction,  // Validator has no typeinfo for this function

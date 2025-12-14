@@ -42,7 +42,7 @@ enum class main_error : uint8_t
  */
 struct arg_value_s
 {
-    std::string_view file_name;
+    std::string file_name;
     std::optional<std::string_view> flag;
 };
 
@@ -126,6 +126,11 @@ int main(int argc, char* argv[])
     if (!res.has_value()) {
         std::print("analyze_exceptions failed\n");
         return EXIT_FAILURE;
+    }
+
+    for (const auto& f : val.find_thrown_functions()) {
+        std::println("throws: {}",
+            val.demangle(f.name.c_str()).value_or(f.name));
     }
 
     // we print it but we canremove this
