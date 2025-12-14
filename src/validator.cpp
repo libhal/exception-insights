@@ -198,7 +198,7 @@ Validator::Result Validator::analyze_exceptions(std::string_view func_name) cons
     return result;
 }
 
-bool Validator::thrown_functions(std::string_view func_name)
+bool Validator::check_thrown_functions(std::string_view func_name)
 {
     auto thrown_opt = find_typeinfo(func_name);
     return thrown_opt.has_value() && !thrown_opt->empty();
@@ -218,7 +218,7 @@ std::vector<symbol_s> Validator::find_thrown_functions()
             continue;
         }
 
-        if (thrown_functions(s.name)) {
+        if (check_thrown_functions(s.name)) {
             out.push_back(s);
         }
     }
