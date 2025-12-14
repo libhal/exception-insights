@@ -198,4 +198,32 @@ Validator::Result Validator::analyze_exceptions(std::string_view func_name) cons
     return result;
 }
 
+bool Validator::thrown_functions(std::string_view func_name)
+{
+    auto thrown_opt = find_typeinfo(func_name);
+    return thrown_opt.has_value() && !thrown_opt->empty();
+}
+
+std::vector<symbol_s> Validator::find_thrown_functions()
+{
+    std::vector<symbol_s> out;
+
+    for (const auto& s : m_sym) {
+        // Only consider real functions
+        if (GELF_ST_TYPE(s.info) != STT_FUNC) {
+            continue;
+        }
+        // skip undefined / external stubs if you want
+        if (s.shndx == SHN_UNDEF) {
+            continue;
+        }
+
+        if (thrown_functions(s.name)) {
+            out.push_back(s);
+        }
+    }
+
+    return out;
+}
+
 }  // namespace safe
