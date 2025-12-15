@@ -5,12 +5,10 @@ void foo(int i) {
         throw std::invalid_argument("arg error");
     } else if(i == 1){
         throw 67;
-    } else if(i == 0){
-        throw std::runtime_error("error");
     } else if(i == 2){
         throw "error";
     } else if (i == 3){
-        throw 6.7;
+        throw 6;
     }
 }
 
@@ -23,7 +21,11 @@ void baa() {
 int main(){
     try{
         baa();
-    } catch (...) {
+    } catch (int& i) {
 
-    };
+    } catch (std::string& s) {
+
+    } catch (std::invalid_argument& e) {
+
+    }
 }

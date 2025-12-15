@@ -10,15 +10,14 @@
  */
 #include <expected>
 #include <filesystem>
+#include <iostream>
 #include <print>
 #include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
-#include <vector>
 #include <unordered_set>
-#include <iostream>
-#include <string>
+#include <vector>
 
 #include "abi_parse.hpp"
 #include "elf_parser.hpp"
@@ -122,24 +121,42 @@ int main(int argc, char* argv[])
     // Load LSDA catch table into Validator
     val.load_lsda(lsda);
 
-    auto res = val.analyze_exceptions("_Z3fooi");
-    if (!res.has_value()) {
-        std::print("analyze_exceptions failed\n");
-        return EXIT_FAILURE;
+    std::println("=======================================");
+    std::println("Function that can throw: ");
+    std::println("=======================================");
+    std::vector<symbol_s> callsite_function = val.find_thrown_functions();
+    for (const auto& func : callsite_function) {
+        std::println("  {}",
+                     val.demangle(func.name.c_str()).value_or(func.name));
     }
 
-    for (const auto& f : val.find_thrown_functions()) {
-        std::println("throws: {}",
-            val.demangle(f.name.c_str()).value_or(f.name));
-    }
-
+    std::println("=======================================");
+    std::println("Catch Sites: ");
+    std::println("=======================================");
     // we print it but we canremove this
-    for (const auto& m : res.value()) {
-        auto dn = val.demangle(m.thrown.name.c_str()).value_or(m.thrown.name);
-        std::print("Thrown: {}\n", dn);
-        for (auto* h : m.handlers) {
-            std::print("  caught by {} type_index={}\n", h->scope_id, h->type_index);
+    for (const auto& func : callsite_function) {
+        std::println("Function: {}", func.name);
+
+        auto caught_throws = val.analyze_exceptions(func.name);
+        if (!caught_throws.has_value()) {
+            std::print("analyze_exceptions failed\n");
+            return EXIT_FAILURE;
         }
+
+        for (auto& caught_throw : caught_throws.value()) {
+            symbol_s caught_throw_obj = caught_throw.thrown;
+            std::string caught_throw_name
+              = val.demangle(caught_throw_obj.name.c_str())
+                  .value_or(caught_throw_obj.name);
+            std::println("\tThrows: {}", caught_throw_name);
+            auto callsite_handlers = caught_throw.handlers;
+            for (auto& handler : callsite_handlers) {
+                std::print("\t\t* caught by {}\n\t\t* type_index={}\n",
+                           handler->scope_id,
+                           handler->type_index);
+            }
+        }
+        std::println("---------------------------------------");
     }
 
     return 0;
