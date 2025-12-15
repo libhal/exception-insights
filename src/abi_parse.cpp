@@ -425,10 +425,11 @@ void LsdaParser::parse_actions_tail(size_t table_start, size_t limit_end)
             // truncate chain when target is outside known entries
             // techdebt: handle cross LSDA/shared-tail action chains when we
             // parse full .gcc_except_table sections instead of single LSDAs.
-            std::cerr << "[AbiParser] warning: next_offset from entry_offset="
-                      << a.entry_offset
-                      << " points to unknown target_offset=" << target_offset
-                      << " – truncating action chain\n";
+            // temporary comment out for demo!
+            // std::cerr << "[AbiParser] warning: next_offset from entry_offset="
+            //           << a.entry_offset
+            //           << " points to unknown target_offset=" << target_offset
+            //           << " – truncating action chain\n";
             a.next_index = -1;
             continue;
         }

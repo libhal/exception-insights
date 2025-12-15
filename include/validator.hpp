@@ -22,6 +22,16 @@
 #include "gelf.h"
 
 namespace safe {
+
+  enum class CorrelateError
+  {
+      NoTypeinfoForFunction,  // Validator has no typeinfo for this function
+      NoThrownTypes,          // Function exists, but no throws recorded
+      NoCatchRecords,         // No LSDA catch records matched any thrown type
+      TypeResolveFailed,      // LSDA::resolve_type() failed for some index
+      NoLsdaLoaded,           // load_lsda() never called
+  };
+
 struct CatchRecord
 {
     std::string scope_id;       // example: "scope[0]"
@@ -57,15 +67,6 @@ class Validator
 
     bool check_thrown_functions(std::string_view func_name);
     std::vector<symbol_s> find_thrown_functions();
-
-    enum class CorrelateError
-    {
-        NoTypeinfoForFunction,  // Validator has no typeinfo for this function
-        NoThrownTypes,          // Function exists, but no throws recorded
-        NoCatchRecords,         // No LSDA catch records matched any thrown type
-        TypeResolveFailed,      // LSDA::resolve_type() failed for some index
-        NoLsdaLoaded,           // load_lsda() never called
-    };
 
     using Result = std::expected<std::vector<ThrowCatchMatch>, CorrelateError>;
 
