@@ -2,6 +2,10 @@
 
 Exceptions binary analysis tool (for Itanum ARM ABI)
 
+## Code Repository
+
+https://github.com/libhal/exception-insights
+
 ## Code Structure
 
 exception-insight
