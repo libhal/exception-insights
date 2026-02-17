@@ -110,6 +110,10 @@ void LsdaParser::build_scopes()
         }
 
         // Follow action chain using resolved next_index
+        
+        std::println("=======================================");
+        std::println("Build Scope: ");
+        std::println("=======================================");
         while (action_index >= 0) {
             const Action& a = actions[static_cast<size_t>(action_index)];
 
@@ -124,6 +128,10 @@ void LsdaParser::build_scopes()
             } else {  // a.type < 0
                 h.type = HandlerType::Filter;
             }
+
+            h.type_index = a.type;
+
+            std::println("  {} ", a.type);
 
             s.handlers.push_back(h);
             action_index
@@ -255,18 +263,19 @@ void LsdaParser::parse()
     std::cout << "Parsing LSDA...\n\n";
 
     // header
-    uint8_t start_enc = 0xFF;
-    uint8_t tt_enc = 0xFF;
-    uint64_t tt_off = 0;
-    parse_header(start_enc, tt_enc, tt_off);
+    // uint8_t start_enc = 0xFF;
+    // uint8_t tt_enc = 0xFF;
+    // uint64_t tt_off = 0;
+    parse_header();
 
-    const size_t tt_start
-      = (tt_enc != 0xFF) ? (index + static_cast<size_t>(tt_off)) : data.size();
+    const size_t tt_start = header.ttype_table_ptr 
+        ? (header.ttype_table_ptr - data.data()) 
+        : data.size();
 
     // callsite table descriptor
-    const uint8_t call_enc = read8();
-    const uint64_t call_site_len = read_uleb128(data, index);
-    const size_t call_site_end = index + static_cast<size_t>(call_site_len);
+    const uint8_t call_enc = header.callsite_encoding;
+    const uint64_t call_site_len = header.callsite_table_length;
+    const size_t call_site_end = index + call_site_len;
     if (call_site_end > data.size()) {
         throw std::runtime_error("call site table went over LSDA size");
     }
@@ -283,7 +292,7 @@ void LsdaParser::parse()
     parse_actions_tail(actions_start, actions_limit);
 
     // parse type table if given
-    if (tt_enc != 0xFF) {
+    if (header.ttype_encoding != 0xFF) {
         if (tt_start > data.size()) {
             throw std::runtime_error("type table start beyond LSDA size");
         }
@@ -292,7 +301,7 @@ void LsdaParser::parse()
         while (index < data.size()) {
             size_t before = index;
             try {
-                uint64_t type_addr = r_encode(tt_enc, 0);
+                uint64_t type_addr = r_encode(header.ttype_encoding, 0);
                 // sanity: r_encode must advance index
                 if (index <= before) {
                     std::cerr << "[AbiParser] warning: type table decode made "
@@ -334,22 +343,35 @@ std::optional<uint64_t> LsdaParser::resolve_type(int64_t type_index) const
 }
 
 // parse LSDA header
-void LsdaParser::parse_header(uint8_t& start_enc,
-                             uint8_t& tt_enc,
-                             uint64_t& tt_off)
+void LsdaParser::parse_header()
 {
-    start_enc = read8();
-    if (start_enc != 0xFF) {
+    // 1. LPStart encoding
+    header.lpstart_encoding = read8();
+    if(header.lpstart_encoding != 0xFF){
         const uint64_t pcrel_base = static_cast<uint64_t>(index);
-        std::ignore = r_encode(start_enc, pcrel_base);  // reads and ignores
+        header.lpstart_value = r_encode(header.lpstart_encoding, pcrel_base); 
+    } else {
+        header.lpstart_value = std::nullopt;
     }
 
-    tt_enc = read8();
-    if (tt_enc != 0xFF) {
-        tt_off = read_uleb128(data, index);
+    // 2. TType encoding
+    header.ttype_encoding = read8();
+    if(header.ttype_encoding != 0xFF){
+        const size_t offset_pos = index;  // Save position
+        header.ttype_offset = read_uleb128(data, index);
+        // TType table grows backwards from this position + offset
+        header.ttype_table_ptr = &data[offset_pos + *header.ttype_offset];
     } else {
-        tt_off = 0;
+        header.ttype_offset = std::nullopt;
+        header.ttype_table_ptr = nullptr;
     }
+
+    // 3. Call site encoding & length
+    header.callsite_encoding = read8();
+    header.callsite_table_length = read_uleb128(data, index);
+    
+    // 4. Mark where call site table starts
+    header.callsite_table_start = index;
 }
 
 // parse callsite table
@@ -358,6 +380,17 @@ void LsdaParser::parse_call_sites(uint8_t call_enc, uint64_t table_len)
     size_t end = index + static_cast<size_t>(table_len);
     while (index < end) {
         CallSite cs{};
+
+
+        // // Print the entire call site table bytes
+        // std::println("Call Site Table bytes ({} bytes):", table_len);
+        // for(size_t i = 0; i < table_len; ++i) {
+        //     std::print("{:02x} ", data[index + i]);
+        //     if((i + 1) % 16 == 0) std::println("");  // New line every 16 bytes
+        // }
+        // std::println("\n");
+
+
         cs.start = r_encode(call_enc, 0);
         cs.length = r_encode(call_enc, 0);
         cs.landing_pad = r_encode(call_enc, 0);
@@ -440,6 +473,36 @@ void LsdaParser::parse_actions_tail(size_t table_start, size_t limit_end)
 
 // printers
 // NOTE: TEMPORARILY ADDED FILENAME PARAMETER FOR DEBUGGING
+void LsdaParser::print_header(){
+    std::println("=======================================");
+    std::println("LSDA Header:");
+    std::println("=======================================");
+    
+    // Landing Pad
+    std::print("LP Start:   enc={:#04x}", header.lpstart_encoding);
+    if(header.lpstart_value.has_value()){
+        std::println(", value={:#x}", *header.lpstart_value);
+    } else {
+        std::println(" (omitted)");
+    }
+    
+    // Type Table
+    std::print("TType:      enc={:#04x}", header.ttype_encoding);
+    if(header.ttype_offset.has_value()){
+        std::println(", offset={}", *header.ttype_offset);
+        std::println("            ptr={}", static_cast<const void*>(header.ttype_table_ptr));
+    } else {
+        std::println(" (none)");
+    }
+    
+    // Call Site
+    std::println("Call Site:  enc={:#04x}, len={}, start={}",
+                header.callsite_encoding, 
+                header.callsite_table_length,
+                header.callsite_table_start);
+    std::println("=======================================");
+}
+
 void LsdaParser::print_call_sites(const std::string& filename) const
 {
     std::ofstream out(filename);

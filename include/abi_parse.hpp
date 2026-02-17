@@ -14,6 +14,22 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <print>
+
+//LSDA header
+struct LsdaHeader {
+    uint8_t lpstart_encoding;
+    uint8_t ttype_encoding;
+    uint8_t callsite_encoding;
+    
+    std::optional<uint64_t> lpstart_value;
+    std::optional<uint64_t> ttype_offset;
+    uint64_t callsite_table_length;
+    
+    // Track positions
+    size_t callsite_table_start;  // Where call site table begins
+    const uint8_t* ttype_table_ptr;  // Where TType table is located
+};
 
 // single entry in LSDA call site
 struct CallSite
@@ -63,10 +79,7 @@ class LsdaParser
     std::optional<uint64_t> resolve_type(int64_t type_index) const;
     void print_call_sites(const std::string& filename) const;
     void print_actions(const std::string& filename) const;
-
-    std::vector<CallSite> call_sites;  // parsed call site records
-    std::vector<Action> actions;       // parsed action records
-    std::vector<uint64_t> type_table;  // parsed type table entries
+    void print_header();
     const std::vector<Scope> get_scopes() const noexcept
     {
         return scopes;
@@ -80,6 +93,11 @@ class LsdaParser
     const std::vector<Action>& get_actions() const noexcept
     {
         return actions;
+    }
+
+   const std::vector<uint64_t>& get_type_table() const noexcept
+    {
+        return type_table;
     }
 
   private:
@@ -97,6 +115,10 @@ class LsdaParser
     uint32_t read32();  // reads 4 bytes
     uint64_t read64();  // reads 8 bytes
 
+    LsdaHeader header;                 // parsed LSDA header
+    std::vector<CallSite> call_sites;  // parsed call site records
+    std::vector<Action> actions;       // parsed action records
+    std::vector<uint64_t> type_table;  // parsed type table entries
     std::vector<Scope> scopes;
 
     // decoders
@@ -109,7 +131,7 @@ class LsdaParser
     uint64_t r_encode(uint8_t encoding,
                       uint64_t pcrel = 0);  // pcrel for DW_EH_PE_pcrel flag
 
-    void parse_header(uint8_t& start_enc, uint8_t& tt_enc, uint64_t& tt_off);
+    void parse_header();
     void parse_call_sites(uint8_t call_enc, uint64_t table_len);
     void parse_actions_tail(size_t table_start, size_t limit_end);
 };

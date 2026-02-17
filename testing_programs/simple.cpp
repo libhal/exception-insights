@@ -10,6 +10,7 @@ void foo(int i) {
     } else if (i == 3){
         throw 6;
     }
+    throw 6.7;
 }
 
 void baa() {

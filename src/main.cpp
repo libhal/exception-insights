@@ -124,17 +124,27 @@ int main(int argc, char* argv[])
     std::println("=======================================");
     std::println("Function that can throw: ");
     std::println("=======================================");
-    std::vector<symbol_s> callsite_function = val.find_thrown_functions();
-    for (const auto& func : callsite_function) {
+    std::vector<symbol_s> throw_function = val.find_thrown_functions();
+    for (const auto& func : throw_function) {
         std::println("  {}",
                      val.demangle(func.name.c_str()).value_or(func.name));
+    }
+
+    std::println("=======================================");
+    std::println("LSDA Type Table: ");
+    std::println("=======================================");
+    std::vector<uint64_t> type_table = lsda.get_type_table();
+    int tt_count = 0;
+    for(const auto & type : type_table){
+        std::print ("   [{}]: {:#0X}", tt_count, type);
+        tt_count++;
     }
 
     std::println("=======================================");
     std::println("Catch Sites: ");
     std::println("=======================================");
     // we print it but we canremove this
-    for (const auto& func : callsite_function) {
+    for (const auto& func : throw_function) {
         std::println("Function: {}", func.name);
 
         auto caught_throws = val.analyze_exceptions(func.name);

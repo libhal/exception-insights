@@ -82,6 +82,15 @@ class Validator
     const LsdaParser* m_lsda = nullptr;   
     std::vector<CatchRecord> m_records;   // flattened handler table
 
+    //make a dfs search in the callgraph to get path from main to throw function
+    //get function symbol of the path in a stack
+    //check if catch block exist in the function symbol
+    //if stack is empty, invalid, else valid
+    // std::stack<CallGraphNode const*, std::vector<CallGraphNode const*>> get_path();
+
+    //abi parser need to be modified to fix type filter and add a type table parsing.
+    //callsite -> action table(type filter) -> type table (type info pointer) -> typeinfo
+
     void collect_rtti_sym();
 };
 

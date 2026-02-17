@@ -129,6 +129,10 @@ void Validator::load_lsda(const LsdaParser& lsda)
         ++idx;
     }
     std::println("[Validator] load_lsda: records = {}", m_records.size());
+
+    for(const auto& record : m_records){
+        std::println("  {}", record.type_index);
+    }
 }
 
 Validator::Result Validator::analyze_exceptions(std::string_view func_name) const
@@ -225,5 +229,9 @@ std::vector<symbol_s> Validator::find_thrown_functions()
 
     return out;
 }
+
+// std::stack<CallGraphNode const*, std::vector<CallGraphNode const*>> Validator::get_path(){
+
+// }
 
 }  // namespace safe
